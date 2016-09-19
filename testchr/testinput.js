@@ -105,12 +105,12 @@ var wrapExpr = f => '(' + wrap(f) + ')();';
 
 
 var wrapModule = function(f,fname,mod='Test',ver='0.0.1') {
-	let n = fname || f.name || 'test';
+	let n = fname || f.name || 'test'; // implementations differ chrome has .name, ff not...
 	return `CHR.Modules.` + mod + ` = {
 
 	version:'` + ver +`',
 
-  	` + n + `: ` + wrap(f) + ` // implementations differ chrome has .name, ff not...
+  	` + n + `: ` + wrap(f) + ` 
 };
 `;
 }

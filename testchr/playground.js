@@ -185,7 +185,8 @@ CHR.Modules.Playground = {
 				resolve.select(this[this.selectedIndex].value);
 			},
 
-			select(-1),
+			// select(-1),
+			select(0),
 
 		    onclick('compile', () => { resolve.compile(); }),
 		    onclick('inject', () => { resolve.inject(); }),

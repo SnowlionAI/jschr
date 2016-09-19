@@ -5,7 +5,12 @@ cd ../chr
 ./browserifychr.sh
 cd ../..
 
-mkdir -p ./dist
-mv src/chrgen/chrgenbundle.js dist/chrgenbundle.js
-mv src/chr/chrbundle.js dist/chrbundle.js
+def=build/dist
+outdir=${1:-$def}
+
+mkdir -p $outdir
+# mkdir -p ./build/dist
+
+mv src/chrgen/chrgenbundle.js $outdir/chrgenbundle.js
+mv src/chr/chrbundle.js $outdir/chrbundle.js
 
