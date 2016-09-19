@@ -1,0 +1,258 @@
+
+
+html, body
+{
+    width: 100%;
+    height: 100%;
+    
+    margin: 0;
+    padding: 0;
+}
+
+.rowbox {
+   display: flex;
+   // -webkit-flex-flow: row;
+   flex-direction: column;
+   flex-flow: column;
+   justify-content: start;
+   align-items: stretch;
+   height:100%;
+}
+
+
+.codeselectblock {
+    flex: 0 6 auto;
+    order: 1;
+}
+
+.main {
+    display: -webkit-flex;
+    display: flex;
+    flex-flow: column;
+   // -webkit-flex-flow: row;
+    flex: 1 6 auto;
+    order: 2;
+    min-height: 290px;
+    overflow:auto;
+}
+
+.columnbox {
+    display: flex;
+    flex-flow: column;
+}
+
+.editorblock {
+    flex: 1 6 auto;
+    min-height: 200px;
+}
+
+
+.editorInblock {
+    order: 1;
+}
+
+.editorOutblock {
+    order: 2;
+}
+
+.editorExecblock {
+    order: 3;
+}
+
+
+.sizebox {
+    flex: 0 6 auto;
+    order: 1;
+    min-height: 24px;
+}
+
+.editor {
+    flex: 1 6 auto;
+    order: 2;
+    min-height: 200px;
+}
+
+.buttonbox {
+    flex: 0 6 auto;
+    order: 3;
+    min-height: 40px;
+}
+
+
+.outputblock {
+    flex: 0 6 auto;
+    order: 3;
+   // min-height: 50px;
+}
+
+
+.output .outputtask {
+   padding: 5px;
+   border: 1px solid #8888bb;
+   border-radius: 7pt;
+   background: #ccccff;
+   border: 1px solid grey;
+}
+
+.editorblock {
+   margin: 4px;
+   padding: 5px;
+   border: 1px solid #8888bb;
+   border-radius: 7pt;
+   background: #ccccff;
+}
+
+
+
+.buttonbox {
+   display: flex;
+   // -webkit-flex-flow: row;
+   flex-flow: row;
+   margin: 10px 10px 10px 0px;
+}
+
+.buttons button {
+    margin-left: 10px;
+    width:100px;
+    height:30px;
+    border-radius: 4pt;
+    font-weight:bold;
+}
+
+.sizebox {
+    display: flex;
+    flex-flow: row;
+    justify-content: flex-end;
+    min-height:24px;
+}
+
+.sizebox button {
+    width:14px;
+    height:14px;
+    font-size: 8px;
+    padding:2px;
+    padding-bottom:4px;
+    margin:2px;
+}
+
+.codeselect {
+    width: 200px;
+    padding:4px;
+    font-weight:bold;
+    border-radius: 4pt;
+}
+
+#editor, #editorOut, #editorExec { 
+    min-height:200px;
+    border-radius: 5pt;
+}
+
+.editorblock {
+   display: flex;
+   // -webkit-flex-flow: row;
+   flex-flow: column;
+    min-height:264px;
+}
+
+
+.codeselectblock, .outputblock, .task .actionelem, .notificationArea, .notification {
+   display: block;
+   margin: 4px;
+   border: 1px solid #eebb55;
+   border-radius: 7pt;
+   background: #ffeebb;
+}
+
+.codeselectblock, .outputblock, .actionelem, .notification {
+   padding: 10px;
+}
+
+
+.task {
+    display: flex;
+    flex-direction: column;
+    flex-flow: column;
+    justify-content: start;
+    align-items: stretch;
+}
+
+
+.task .label {
+    font-weight: bold;
+    order: 1;
+}
+
+.task .text {
+    order: 2;
+}
+
+.task .prop {
+    order: 3;
+}
+
+.task .action {
+    order:5;
+}
+
+.task .prop label span {
+    display:inline-block;
+    width:100px;
+}
+
+.task button, .task input {
+    margin-left: 10px;
+    border-radius: 4pt;
+    font-weight:bold;
+}
+
+.task label div, .task .radio div {
+    display:inline;
+}
+.task .radio {
+    margin-left: 10px;
+}
+
+.task {
+   margin: 4px;
+   padding: 5px;
+   border: 1px solid #eebb55;
+   border-radius: 7pt;
+   background: #ffeebb;    
+}
+
+.notificationArea {
+    position: absolute;
+    top:20px;
+    right:20px;
+    background: #ccccff;
+    z-index: 100;
+}
+
+.notification {
+    background: #ccccff;
+}
+
+.notification.error {
+    color: red; 
+}
+
+.metaTaskContainer {
+    position: absolute;
+    top:20px;
+    right:20px;
+    background: #ccccff;
+    z-index: 100;    
+}
+
+
+.codeselectblock {
+   // min-height: 50px;
+}
+
+@media (min-width: 768px) {
+    .main {
+        flex-flow: row;
+        flex-direction: row;
+        // background:blue;
+    }
+}
