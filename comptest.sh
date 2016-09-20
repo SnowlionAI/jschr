@@ -1,5 +1,4 @@
-# node compileFiles.js -o out testchr/test.js
-# node compileFiles.js -o out testchr/taskflow.js
+
 path=./src/chrgen/
 
 def=build/test

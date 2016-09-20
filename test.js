@@ -59,6 +59,6 @@ function initCompilerPanel() {
 
 
 
-window.onload = (function() { initPlayground(); initCompilerPanel(); });
+window.onload = (function() { initPlayground(); });
 
 
