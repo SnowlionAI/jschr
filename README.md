@@ -20,6 +20,7 @@ Compile and run Constraint Handling Rules (CHR) in JavaScript.
 
 ## Try it out yourself...
 
+https://snowlionai.github.io/jschr/
 
 
 ## Installation
