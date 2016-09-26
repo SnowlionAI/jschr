@@ -7,6 +7,8 @@
 <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
  -->
 
+<link href="index.css" rel="stylesheet">
+
 <script src="./build/dist/chrgenbundle.js">
 </script>
 
@@ -45,7 +47,7 @@
 <script src="./testinput.js">
 </script>
 
-<script src="./test.js">
+<script src="./index.js">
 </script>
 
 
@@ -53,9 +55,31 @@
 </script>
  -->
 
+<script>
+function testfib() {
+    let chr = new CHR();
+    let init = Test.init(chr);
+
+    let u = 100;
+    let module = init.module;
+
+    let f = _ => { 
+            chr.reset();
+            module.upto(u);
+            chr.resolve(); 
+        };
 
 
-<link href="test.css" rel="stylesheet">
+    iterate(f,1);
+
+    appendDivText('');
+    appendDivText('constraints:');
+    let vs = chr.Store.getItems().map(c => c.show());
+    vs.forEach(appendDivText);    
+}
+</script>
+
+
 <!-- 
 <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
  -->

@@ -421,7 +421,7 @@ let fibTestCode = function() {
 let fibCHRCode = function() {
 	upto(_N) >>> fib(0,0), fib(1,1);
 	upto(Max), fib(N,M) / fib(Nr,Mr) | 
-		(N == Nr + 1, Nr < Max) >>>
+		(N == Nr + 1 && Nr < Max) >>>
 			fib(N + 1,M + Mr);
 };
 
@@ -502,7 +502,7 @@ let hammingTestCode = function() {
 		chr.resolve();
 	};
 
-	iterate(f,1);
+	iterate(f,10);
 
     let cs = chr.Store.getItems();
 
