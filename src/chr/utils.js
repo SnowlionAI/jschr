@@ -193,6 +193,10 @@
 		return min + Math.floor((max - min) * r);
 	}
 
+    let randomhex = function() {
+        return Math.random().toString(16).slice(2);
+    }
+
 	let Utils = {
 		assign: assign,
 		keys: keys,
@@ -206,6 +210,7 @@
 		binaryIndexOf: binaryIndexOf,
 		binaryInsert: binaryInsert,
 		binaryRemove: binaryRemove,
+        randomhex:randomhex,
 		log: log,
 		VERSION: version
 	}

@@ -129,16 +129,10 @@
 	Var.prototype.show = function() {
 		if (!this.id)
 			this.id = newID();
-		// let res = 'Var(id:' + this.id;
 		let res = 'Var(id:' + this.id;
-		// if (this.name)
-		// 	res += ', name:' + this.name; 
 
 		if (this.value && this.value !== NoValue)
 			res += ', value:' + this.value;
-
-		// let len = this.onSetArr ? this.onSetArr.length : 0;
-		// res += ', onSetArrLength:' + len;
 
 		res += ")";
 

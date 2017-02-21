@@ -14,6 +14,7 @@
 
     let Utils = require('./utils.js');
     let Var = require('./var.js');
+    let Constraint = require('./constraint.js');
 
 	let Index = function(store) {
 		this.indexes = mkIdx();
@@ -252,7 +253,7 @@
 		let vg = Var.get(v);
 		return  vg === undefined ? null : function(idx,argi,na,keys,items) {
 			return Utils.iterExcl(keys,function(n) { 
-				return items[n] ? f(items[n].args[argi],v) : undefined; 
+				return items[n] ? f(items[n][Constraint.argsSym][argi],v) : undefined; 
 			});
 		}
 	};

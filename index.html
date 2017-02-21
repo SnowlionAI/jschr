@@ -23,14 +23,16 @@
 </script>
 
 <script>
+
   var CHR = require('/chr.js');
-  var Var = require('/var.js');
-  var VarRef = require('/varref.js');
-  var Constraint = require('/constraint.js');
-  var Index = require('/index.js');
-  var Utils = require('/utils.js');
-  var Checks = require('/checks.js');
-  var Match = require('/match.js');
+  // var Var = require('/var.js');
+  // var VarRef = require('/varref.js');
+  // var Constraint = require('/constraint.js');
+  // var Index = require('/index.js');
+  // var Utils = require('/utils.js');
+  // var Checks = require('/checks.js');
+  // var Match = require('/match.js');
+
 </script>
 
 <script src="./build/test/playground.js"></script>
@@ -42,6 +44,9 @@
 
 <script src="./build/test/testelem.js"></script>
 <script src="./testchr/testelem.js"></script>
+
+<script src="./build/test/reactive.js"></script>
+<script src="./testchr/reactive.js"></script>
 
 
 <script src="./testinput.js">
@@ -77,6 +82,9 @@ function testfib() {
     let vs = chr.Store.getItems().map(c => c.show());
     vs.forEach(appendDivText);    
 }
+
+
+
 </script>
 
 

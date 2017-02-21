@@ -52,7 +52,7 @@
 
 
     let matchKey = Symbol('match');
-
+    // let matchKey = '_$match';
 
 
     let derefWait = function(v,varrefs,f) { Var.wait(VarRef.deref(v,varrefs),f); }
@@ -216,7 +216,10 @@
 
     Array.prototype[matchKey] = function(o,eq,varrefs,waiter,fail) {
       typeMatch(this,o,eq,varrefs,waiter,fail,function(self,ov) {
-        if (Array.isArray(ov)) {
+        if (ov === self) {
+            return;
+        }
+        else if (Array.isArray(ov)) {
           if (self.length !== ov.length)
             fail && fail();
           else {
@@ -239,7 +242,10 @@
 
     Object.prototype[matchKey] = function(o,eq,varrefs,waiter,fail) {
       typeMatch(this,o,eq,varrefs,waiter,fail,function(self,ov) {
-        if (Checks.isObject(ov)) {
+        if (ov === self) {
+            return;
+        }
+        else if (Checks.isObject(ov)) {
           // let matchCount = 0;
           for (let k in ov) {
             if (waiter.failed)

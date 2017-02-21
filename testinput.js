@@ -1,4 +1,8 @@
 
+let Var = require('/var.js');
+let VarRef = require('/varref.js');
+let Utils = require('/utils.js');
+
 let timescript = function(f) {
 	let t0 = performance.now();
 	f();
@@ -24,6 +28,7 @@ let initCode =
     let chr = new CHR();
     let init = Test.init(chr);
 `;
+
 
 
 var iterate = function(f,n,init) {
@@ -121,7 +126,7 @@ let pathTestCode = function() {
 
 	let f = _ => { 
 		chr.reset();
-    	init.module.example();
+    	init.module.Test.example();
 		chr.resolve();
 	};
 
@@ -132,7 +137,7 @@ let pathTestCode = function() {
     let cs = chr.Store.getItems();
 
     appendDivText('constraints:');
-    cs.sort().forEach(c => appendDivText(c.show()));
+    cs.sort().forEach(c => appendDivText(CHR.show(c)));
     appendDivText('constraint#:' + cs.length);
 
 };
@@ -196,12 +201,12 @@ let pathVarTestCode = function() {
 		let module = path.module;
 
     	let ti = timescript(function() {
-		 	module.path(paris,'Ulm',700);
-			module.path('Ulm','Vienna',600);
-			module.path('Vienna',paris,l1200);
-			module.path('Vienna',london,1500);
-			module.path('Berlin','Vienna',650);
-			module.path(london,'Berlin',1100);
+		 	module.Test.path(paris,'Ulm',700);
+			module.Test.path('Ulm','Vienna',600);
+			module.Test.path('Vienna',paris,l1200);
+			module.Test.path('Vienna',london,1500);
+			module.Test.path('Berlin','Vienna',650);
+			module.Test.path(london,'Berlin',1100);
 			chr.resolve();
 
     	});
@@ -235,7 +240,7 @@ let pathVarTestCode = function() {
     disp('cities',cities,n);
     disp('dist',dist,n);
     appendDivText('constraints:');
-    cs.sort().forEach(c => appendDivText(c.show()));
+    cs.sort().forEach(c => appendDivText(CHR.show(c)));
     appendDivText('constraint#:' + cs.length);
 
 };
@@ -293,15 +298,15 @@ let pathNTestCode = function() {
 	let f = _ => { 
 		chr.reset();
 
-	 	module.path('Paris','Ulm',700);
-		module.path('Ulm','Vienna',600);
-		module.path('Vienna','Paris',1200);
-		module.path('Vienna','London',1500);
-		module.path('Berlin','Vienna',650);
-		module.path('London','Berlin',1100);
+	 	module.Test.path('Paris','Ulm',700);
+		module.Test.path('Ulm','Vienna',600);
+		module.Test.path('Vienna','Paris',1200);
+		module.Test.path('Vienna','London',1500);
+		module.Test.path('Berlin','Vienna',650);
+		module.Test.path('London','Berlin',1100);
 
 		testpath_cons.forEach(function(c) {
-			module.path(c[0],c[1],c[2]);
+			module.Test.path(c[0],c[1],c[2]);
 		});
 
 		chr.resolve();
@@ -313,7 +318,7 @@ let pathNTestCode = function() {
     let cs = chr.Store.getItems();
 
     appendDivText('constraints:');
-    cs.sort().forEach(c => appendDivText(c.show()));
+    cs.sort().forEach(c => appendDivText(CHR.show(c)));
     appendDivText('constraint#:' + cs.length);
 
 };
@@ -343,10 +348,10 @@ let minTestCode = function() {
 	let f = _ => { 
 		chr.reset();
 		arr.forEach(n => {
-			init.module.min(n);
+			init.module.Test.min(n);
 		});
 
-		init.module.findMin();
+		init.module.Test.findMin();
 		chr.resolve();
 	};
 
@@ -356,13 +361,13 @@ let minTestCode = function() {
     appendDivText('min:' + min);
     appendDivText('max:' + max);
 
-	let vs = chr.Store.getItems().sort().map(c => c.show());
+	let vs = chr.Store.getItems().sort().map(c => CHR.show(c));
     vs.forEach(appendDivText);
 
     let cs = chr.Store.getItems();
 
-	let modMinName = init.modname + '.min';
-	let foundmins = cs.filter(c => c.name === modMinName).map(c => Var.get(c.args[0]));
+	let modMinName = 'Test.min';
+	let foundmins = cs.filter(c => Constraint.name(c) === modMinName).map(c => Var.get(Constraint.args(c,0)));
 
     appendDivText('constraints:');
     appendDivText('foundmins:' + foundmins);
@@ -404,7 +409,7 @@ let fibTestCode = function() {
 
     let f = _ => { 
     	    chr.reset();
-    		module.upto(u);
+    		module.Test.upto(u);
     		chr.resolve(); 
     	};
 
@@ -413,7 +418,7 @@ let fibTestCode = function() {
 
     appendDivText('');
     appendDivText('constraints:');
-	let vs = chr.Store.getItems().map(c => c.show());
+	let vs = chr.Store.getItems().map(c => CHR.show(c));
     vs.forEach(appendDivText);
 
 }
@@ -447,7 +452,7 @@ let xorTestCode = function() {
 	let f = _ => { 
 		chr.reset();
 		arr.forEach(n => {
-			init.module.xor(n);
+			init.module.Test.xor(n);
 		});
 
 		chr.resolve();
@@ -457,9 +462,9 @@ let xorTestCode = function() {
 
     appendDivText('set#:' + n);
 
-	let modXorName = init.modname + '.xor';
+	let modXorName = 'Test.xor';
 	let cs = chr.Store.getItems();
-	let foundxors = cs.filter(c => c.name === modXorName).map(c => c.args[0].valueOf());
+	let foundxors = cs.filter(c => c[Constraint.nameSym] === modXorName).map(c => Constraint.args(c,0).valueOf());
 
 
     appendDivText('constraints:');
@@ -498,7 +503,7 @@ let hammingTestCode = function() {
 
 	let f = _ => { 
 		chr.reset();
-    	init.module.example(n);
+    	init.module.Test.example(n);
 		chr.resolve();
 	};
 
@@ -507,7 +512,7 @@ let hammingTestCode = function() {
     let cs = chr.Store.getItems();
 
     appendDivText('constraints:');
-    cs.sort().forEach(c => appendDivText(c.show()));
+    cs.sort().forEach(c => appendDivText(CHR.show(c)));
     appendDivText('constraint#:' + cs.length);
 
 };
@@ -540,20 +545,20 @@ let gcdTestCode = function() {
 
 	let f = _ => { 
 		chr.reset();
-		vs.forEach(v => { init.module.gcd(v) });
+		vs.forEach(v => { init.module.Test.gcd(v) });
 		chr.resolve();
 	};
 
 	iterate(f,100);
 
-	let gcd = chr.Store.getItems()[0].args[0];
+	let gcd = chr.Store.getItems()[0][Constraint.argsSym][0];
 
 	let p = vs.pop();
 	appendDivText('the gcd of ' + vs + ' and ' + p + ' is ' + gcd);
 
     let cs = chr.Store.getItems();
     appendDivText('constraints:');
-    cs.sort().forEach(c => appendDivText(c.show()));
+    cs.sort().forEach(c => appendDivText(CHR.show(c)));
     appendDivText('constraint#:' + cs.length);
 
 };
@@ -580,14 +585,14 @@ let primesTestCode = function() {
 
 	let f = _ => { 
 		chr.reset();
-		init.module.uptoP(n);
+		init.module.Test.uptoP(n);
 		chr.resolve();
 	};
 
 	iterate(f,10);
 
 	let ps = chr.Store.getItems();
-	let primes = ps.map(p => p.args[0]);
+	let primes = ps.map(p => p[Constraint.argsSym][0]);
 	appendDivText('primes upto ' + n + ' are:');
 	showArray('primes',primes);
 };
@@ -608,21 +613,21 @@ let primes = 	{
 let sqrtTestCode = function() {
     let chr = new CHR();
     let modname = 'Sqrt';
-    let init = Test.init(chr,{},modname);
+    let init = Test.init(chr,modname,{});
 
 	let n=1000;
 	let p=0.001;
 
 	let f = _ => { 
 		chr.reset();
-		init.module.sqrt(n,1,p);
+		init.module.Sqrt.sqrt(n,1,p);
 		chr.resolve();
 	};
 
 	iterate(f,1000);
 
 	let sqrtCons = chr.Store.getItems(modname + '.sqrt/3');
-	let sqrt = sqrtCons.map(c => c.args[1]);
+	let sqrt = sqrtCons.map(c => c[Constraint.argsSym][1]);
 
 	let sqrtJS = Math.sqrt(n);
 
@@ -650,21 +655,21 @@ let sqrt = 	{
 
 let mergeTestCode = function() {
     let chr = new CHR();
-    let init = Test.init(chr,{},'Merge');
+    let init = Test.init(chr,'Merge',{});
 
     // let l = [6,2,3,9,20,52,1,5,23,3,2,6,45];
     let l = randomN(100,0,500);
 
 	let f = _ => { 
 		chr.reset();
-		l.map(function(n) { init.module.merge(0,n); });
+		l.map(function(n) { init.module.Merge.merge(0,n); });
 		chr.resolve();
 	};
 
 	iterate(f,10);
 
 	var items = chr.Store.getItems();
-	var ms = items.map(i => [i.args[0],i.args[1]]);
+	var ms = items.map(i => [i[Constraint.argsSym][0],i[Constraint.argsSym][1]]);
 
 	function sortNumber([a1,b1],[a2,b2]) {
 	    let a = a1 - a2;
@@ -692,7 +697,7 @@ let merge = {
 
 let combTestCode = function() {
     let chr = new CHR();
-    let init = Test.init(chr,{},'Comb');
+    let init = Test.init(chr,'Comb',{});
 
 	let set = [];
 
@@ -714,7 +719,7 @@ let combTestCode = function() {
 	let f = _ => { 
 		chr.reset();
 		set.forEach(function(vs,i) {
-			init.module.comb.apply(null,vs); 
+			init.module.Comb.comb.apply(null,vs); 
 		});
 		chr.resolve();
 	};
@@ -725,10 +730,10 @@ let combTestCode = function() {
 
     showArray('set',set);
 
-	let combs = chr.Store.getItems(init.modname + '.comb/' + 3);
+	let combs = chr.Store.getItems('Comb.comb/' + 3);
 	appendDivText('combs#:' + combs.length);
 
-	let triples = chr.Store.getItems(init.modname + '.triple/' + 3).map(c => c.args);
+	let triples = chr.Store.getItems('Comb.triple/' + 3).map(c => c[Constraint.argsSym]);
 	showArray('combinations',triples);
 
 }
@@ -746,7 +751,7 @@ let comb = {
 
 let parserTestCode = function() {
     let chr = new CHR();
-    let init = Test.init(chr,{},'Parser');
+    let init = Test.init(chr,'Parser',{});
 
 	let string = '((a,b,c),b,[c,d],f),';
 	let tokens = string.split('');
@@ -766,34 +771,34 @@ let parserTestCode = function() {
 	let f = _ => { 
 		chr.reset();
 		// terminals
-		module.r('popen','(');
-		module.r('pclose',')');
-		module.r('bopen','[');
-		module.r('bclose',']');
+		module.Parser.r('popen','(');
+		module.Parser.r('pclose',')');
+		module.Parser.r('bopen','[');
+		module.Parser.r('bclose',']');
 
-		module.r('comma',',');
+		module.Parser.r('comma',',');
 
-		module.r('word','a');
-		module.r('word','b');
-		module.r('word','c');
-		module.r('word','d');
-		module.r('word','e');
-		module.r('word','f');
-		module.r('word','g');
+		module.Parser.r('word','a');
+		module.Parser.r('word','b');
+		module.Parser.r('word','c');
+		module.Parser.r('word','d');
+		module.Parser.r('word','e');
+		module.Parser.r('word','f');
+		module.Parser.r('word','g');
 
-		module.r('listcomma','word','comma');
+		module.Parser.r('listcomma','word','comma');
 
-		module.r('listelem','listcomma','word');
-		module.r('listcomma','listelem','comma');
+		module.Parser.r('listelem','listcomma','word');
+		module.Parser.r('listcomma','listelem','comma');
 
-		module.r('listpopen','popen','listelem');
-		module.r('list','listpopen','pclose');
+		module.Parser.r('listpopen','popen','listelem');
+		module.Parser.r('list','listpopen','pclose');
 
-		module.r('arraypopen','bopen','listelem');
-		module.r('array','arraypopen','bclose');
+		module.Parser.r('arraypopen','bopen','listelem');
+		module.Parser.r('array','arraypopen','bclose');
 
 		l.forEach(function(t,i) {
-			module.e(t,i,i+1);
+			module.Parser.e(t,i,i+1);
 		});
 
 		chr.resolve();
@@ -808,14 +813,14 @@ let parserTestCode = function() {
     if (l.length < 100)
     	showArray('set',l);
 
-	let listelems = chr.Store.getItems(init.modname+'.p/4').filter(c => c.args[0] === 'listelem').map(c => ({from:c.args[1], to:c.args[2], listelem: l.slice(c.args[1],c.args[2]).join('') }));
+	let listelems = chr.Store.getItems('Parser.p/4').filter(c => c[Constraint.argsSym][0] === 'listelem').map(c => ({from:c[Constraint.argsSym][1], to:c[Constraint.argsSym][2], listelem: l.slice(c[Constraint.argsSym][1],c[Constraint.argsSym][2]).join('') }));
 	showArray('listelems',listelems);
 
 
-	let lists = chr.Store.getItems(init.modname+'.p/4').filter(c => c.args[0] === 'list').map(c => ({from:c.args[1], to:c.args[2], list: l.slice(c.args[1],c.args[2]).join('') }));
+	let lists = chr.Store.getItems('Parser.p/4').filter(c => c[Constraint.argsSym][0] === 'list').map(c => ({from:c[Constraint.argsSym][1], to:c[Constraint.argsSym][2], list: l.slice(c[Constraint.argsSym][1],c[Constraint.argsSym][2]).join('') }));
 	showArray('lists',lists);
 
-	let arrays = chr.Store.getItems(init.modname+'.p/4').filter(c => c.args[0] === 'array').map(c => ({from:c.args[1], to:c.args[2], array: l.slice(c.args[1],c.args[2]).join('') }));
+	let arrays = chr.Store.getItems('Parser.p/4').filter(c => c[Constraint.argsSym][0] === 'array').map(c => ({from:c[Constraint.argsSym][1], to:c[Constraint.argsSym][2], array: l.slice(c[Constraint.argsSym][1],c[Constraint.argsSym][2]).join('') }));
 	showArray('arrays',arrays);
 }
 
@@ -838,7 +843,7 @@ let parser = {
 
 let parserDirectTestCode = function() {
     let chr = new CHR();
-    let init = Test.init(chr,{},'ParserDirect');
+    let init = Test.init(chr,'ParserDirect',{});
 
 	let string = '((a,b,c),b,[c,d],f),';
 	let tokens = string.split('');
@@ -864,17 +869,17 @@ let parserDirectTestCode = function() {
 		l.forEach(function(t,i) {
 			// console.log('add',t,i,i+1);
 			if (t === ',')
-				module.pd('comma',i,i+1)
+				module.ParserDirect.pd('comma',i,i+1)
 			else if (t === '(')
-				module.pd('popen',i,i+1)
+				module.ParserDirect.pd('popen',i,i+1)
 			else if (t === ')')
-				module.pd('pclose',i,i+1)
+				module.ParserDirect.pd('pclose',i,i+1)
 			else if (t === '[')
-				module.pd('bopen',i,i+1)
+				module.ParserDirect.pd('bopen',i,i+1)
 			else if (t === ']')
-				module.pd('bclose',i,i+1)
+				module.ParserDirect.pd('bclose',i,i+1)
 			else 
-				module.pd('word',i,i+1,t+i);
+				module.ParserDirect.pd('word',i,i+1,t+i);
 		});
 		chr.resolve();
 	};
@@ -887,10 +892,10 @@ let parserDirectTestCode = function() {
     if (l.length < 100)
     	showArray('list',l);
 
-	let array = chr.Store.getItems(init.modname + '.pd/' + 4).filter(c => c.args[0] === 'array').map(c => ({from:c.args[1], to:c.args[2], array: l.slice(c.args[1],c.args[2]).join('') }));
+	let array = chr.Store.getItems('ParserDirect.pd/' + 4).filter(c => c[Constraint.argsSym][0] === 'array').map(c => ({from:c[Constraint.argsSym][1], to:c[Constraint.argsSym][2], array: l.slice(c[Constraint.argsSym][1],c[Constraint.argsSym][2]).join('') }));
 	showArray('arrays',array);
 
-	let list = chr.Store.getItems(init.modname + '.pd/' + 4).filter(c => c.args[0] === 'list').map(c => ({from:c.args[1], to:c.args[2], list: l.slice(c.args[1],c.args[2]).join('') }));
+	let list = chr.Store.getItems('ParserDirect.pd/' + 4).filter(c => c[Constraint.argsSym][0] === 'list').map(c => ({from:c[Constraint.argsSym][1], to:c[Constraint.argsSym][2], list: l.slice(c[Constraint.argsSym][1],c[Constraint.argsSym][2]).join('') }));
 	showArray('list',list);
 }
 
@@ -921,7 +926,7 @@ let parserdirect = {
 
 let parserExplTestCode = function() {
     let chr = new CHR();
-    let init = Test.init(chr,{},'ParserExpl');
+    let init = Test.init(chr,'ParserExpl',{});
 
 	let string = '((a,b,c),b,[c,d],f),';
 	let tokens = string.split('');
@@ -946,17 +951,17 @@ let parserExplTestCode = function() {
 		l.forEach(function(t,i) {
 			// console.log('add',t,i,i+1);
 			if (t === ',')
-				init.module.comma(i,i+1);
+				init.module.ParserExpl.comma(i,i+1);
 			else if (t === '(')
-				init.module.popen(i,i+1);
+				init.module.ParserExpl.popen(i,i+1);
 			else if (t === ')')
-				init.module.pclose(i,i+1);
+				init.module.ParserExpl.pclose(i,i+1);
 			else if (t === '[')
-				init.module.bopen(i,i+1);
+				init.module.ParserExpl.bopen(i,i+1);
 			else if (t === ']')
-				init.module.bclose(i,i+1);
+				init.module.ParserExpl.bclose(i,i+1);
 			else 
-				init.module.word(i,i+1,t+i);
+				init.module.ParserExpl.word(i,i+1,t+i);
 		});
 		chr.resolve();
 	};
@@ -969,10 +974,10 @@ let parserExplTestCode = function() {
     if (l.length < 100)
     	showArray('set',l);
 
-	let array = chr.Store.getItems(init.modname + '.array/' + 3).map(c => ({from:c.args[0], to:c.args[1], array: l.slice(c.args[0],c.args[1]).join('') }));
+	let array = chr.Store.getItems('ParserExpl.array/' + 3).map(c => ({from:c[Constraint.argsSym][0], to:c[Constraint.argsSym][1], array: l.slice(c[Constraint.argsSym][0],c[Constraint.argsSym][1]).join('') }));
 	showArray('arrays',array);
 
-	let list = chr.Store.getItems(init.modname + '.list/' + 3).map(c => ({from:c.args[0], to:c.args[1], list: l.slice(c.args[0],c.args[1]).join('') }));
+	let list = chr.Store.getItems('ParserExpl.list/' + 3).map(c => ({from:c[Constraint.argsSym][0], to:c[Constraint.argsSym][1], list: l.slice(c[Constraint.argsSym][0],c[Constraint.argsSym][1]).join('') }));
 	showArray('list',list);
 }
 
@@ -1000,7 +1005,7 @@ let parserexpl = {
 
 let selectTestCode = function() {
     let chr = new CHR();
-    let init = Test.init(chr,{},'Select');
+    let init = Test.init(chr,'Select',{});
 
 	let n = 1000;
 
@@ -1015,7 +1020,7 @@ let selectTestCode = function() {
 		chr.reset();
 
 		l.forEach(function(t,i) {
-			init.module.select(t,i);
+			init.module.Select.select(t,i);
 		});
 		chr.resolve();
 	};
@@ -1029,7 +1034,7 @@ let selectTestCode = function() {
 
 	appendDivText('found cs:' + found.length);
 
-	let kvs = found.map(c => ({k:c.args[0],v:c.args[1] }) );
+	let kvs = found.map(c => ({k:c[Constraint.argsSym][0],v:c[Constraint.argsSym][1] }) );
 	let arr = [];
 	kvs.forEach(kv => {
 		arr[kv.v] = kv.k;
@@ -1082,9 +1087,9 @@ let select = {
 
 let testTestCode = function() {
     let chr = new CHR();
-    let init = Test.init(chr,{},'Test');
+    let init = Test.init(chr,'Test',{});
 
-	init.module.addsel();
+	init.module.Test.addsel();
 	chr.resolve();
 
 	let cs = chr.Store.getItems();
@@ -1119,11 +1124,11 @@ let test = {
 
 let playgroundTestCode = function() {
     let chr = new CHR();
-    let init = Playground.init(chr,{},'Playground');
+    let init = Playground.init(chr,'Playground',{});
 
 	let testinput = [path,pathVar,pathN,min,fib,xor,hamming,gcd,primes,sqrt,merge,comb,parser,parserdirect,parserexpl,select,test,playground];
 	
-	init.module.init(testinput);
+	init.module.Playground.init(testinput);
 	chr.resolve();
 };
 
@@ -1140,9 +1145,9 @@ let playground = {
 
 let compilerPanelTestCode = function() {
     let chr = new CHR();
-    let init = CompilerPanel.init(chr,{},'CompilerPanel');
+    let init = CompilerPanel.init(chr,'CompilerPanel',{});
 
-	init.module.init();
+	init.module.CompilerPanel.init();
 	chr.resolve();
 };
 
@@ -1156,12 +1161,33 @@ let compilerPanel = {
 }
 
 
+let reactiveTestCode = function() {
+    let chr = new CHR();
+    let init = Reactive.init(chr,'Reactive',{});
+
+    init.module.Reactive.init();
+    chr.resolve();
+};
+
+let reactiveCHRCode = CHR.Modules.Reactive.reactive;
+
+
+let reactive = {
+    name:'reactive',
+    code: wrapModule(reactiveCHRCode,undefined,'Reactive'),
+    testcode: wrapExpr(reactiveTestCode)
+}
+
+
+
+
+
 
 let nTestCode = function() {
     let chr = new CHR();
-    let init = N.init(chr,{},'N');
+    let init = N.init(chr,'N',{});
 
-	init.resolve.test();
+	init.resolve.N.test();
 };
 
 let nCHRCode = function() {
@@ -1191,7 +1217,7 @@ let nullUndefined = {
 
 let timepointTestCode = function() {
     let chr = new CHR();
-    let init = Timepoint.init(chr,{},'Timepoint');
+    let init = Timepoint.init(chr,'Timepoint',{});
 
 	let f = _ => { 
 		chr.reset();
@@ -1209,7 +1235,7 @@ let timepointTestCode = function() {
 	let cs = chr.Store.getItems();
 
     appendDivText('constraints:');
-    cs.sort().forEach(c => appendDivText(c.show()));
+    cs.sort().forEach(c => appendDivText(CHR.show(c)));
     appendDivText('constraint#:' + cs.length);
 
 };
@@ -1248,11 +1274,11 @@ let timepoint = {
 
 let queensTestCode = function() {
     let chr = new CHR();
-    let init = Queens.init(chr,{},'Queens');
+    let init = Queens.init(chr,'Queens',{});
 
 	let f = _ => { 
 		chr.reset();
-    	init.resolve.example();
+    	init.resolve.Queens.example();
 	};
 
 	try {
@@ -1265,7 +1291,7 @@ let queensTestCode = function() {
 	let cs = chr.Store.getItems();
 
     appendDivText('constraints:');
-    cs.sort().forEach(c => appendDivText(c.show()));
+    cs.sort().forEach(c => appendDivText(CHR.show(c)));
     appendDivText('constraint#:' + cs.length);
 
 };
@@ -1293,7 +1319,7 @@ let queensCHRCode = function() {
 
 	q(n,p) >>> col(p),ld(n,p-n),rd(n,p+n), check(n+1,0);
 
-	- found(n) >>> (cs = chr.getConstraints(modname + '.q/2').map(c => c.args[1])), solution(cs);
+	- found(n) >>> (cs = chr.getConstraints(modname + '.q/2').map(c => c[Constraint.argsSym][1])), solution(cs);
 
 	- example >>> solve(8);
 };
@@ -1308,11 +1334,11 @@ let queens = {
 
 let queens2TestCode = function() {
     let chr = new CHR();
-    let init = Queens2.init(chr,{},'Queens2');
+    let init = Queens2.init(chr,'Queens2',{});
 
 	let f = _ => { 
 		chr.reset();
-    	init.module.example();
+    	init.module.Queens.example();
 		chr.resolve();
 	};
 
@@ -1326,7 +1352,7 @@ let queens2TestCode = function() {
 	let cs = chr.Store.getItems();
 
     appendDivText('constraints:');
-    cs.sort().forEach(c => appendDivText(c.show()));
+    cs.sort().forEach(c => appendDivText(CHR.show(c)));
     appendDivText('constraint#:' + cs.length);
 
 };
@@ -1365,7 +1391,7 @@ let queens2 = {
 }
 
 
-let testinput = [path,pathVar,pathN,min,fib,xor,hamming,gcd,primes,sqrt,merge,comb,parser,parserdirect,parserexpl,select,test,playground,compilerPanel,nullUndefined,timepoint,queens];
+let testinput = [path,pathVar,pathN,min,fib,xor,hamming,gcd,primes,sqrt,merge,comb,parser,parserdirect,parserexpl,select,test,playground,reactive,compilerPanel,nullUndefined,timepoint,queens];
 
 
 

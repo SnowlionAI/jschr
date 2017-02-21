@@ -1,3 +1,6 @@
+// This file is generated: DO NOT CHANGE!
+// Changes will be overwritten...
+
 ((root, factory) => {
     if (typeof define === 'function' && define.amd) {
         define([], factory);
@@ -8,8 +11,13 @@
     }
 })(this, () => {
     'use strict';
+    let Constraint = require('/constraint.js');
+    let Var = require('/var.js');
+    let Index = require('/index.js');
+    let Match = require('/match.js');
+    let Utils = require('/utils.js');
     let version = '0.0.1';
-    let compilerPanel = (chr, module, resolve, modbase, modname) => {
+    let compilerPanel = (chr, module, resolve, base, modname) => {
         let pointedname = modname ? modname + '.' : '';
         let modAddScript = pointedname + 'addScript';
         let modAddScript$1 = modAddScript + '/1';
@@ -62,7 +70,7 @@
     text-align: center;
 }`;
         (() => {
-            let body = js => {
+            let _body = js => {
                 var du = new Var(), script;
                 chr.cont([
                     () => {
@@ -75,25 +83,21 @@
                         script = document.createElement('script');
                     },
                     () => {
-                        chr.add(modToDataURI, [
-                            'text/javascript',
-                            js,
-                            du.deref()
-                        ]);
+                        module.toDataURI('text/javascript', js, du.deref());
                     }
                 ]);
             };
             chr.addConstraintListener(modAddScript$1, [new Var()], addScript => {
                 let varrefs0 = [];
-                let js = addScript.args[0];
+                let js = addScript._$0;
                 if (Constraint.allAlive([addScript])) {
                     chr.remove(addScript);
-                    body(js);
+                    _body(js);
                 }
             });
         })();
         (() => {
-            let body = style => {
+            let _body = style => {
                 var du = new Var(), link;
                 chr.cont([
                     () => {
@@ -109,36 +113,28 @@
                         link = document.createElement('link');
                     },
                     () => {
-                        chr.add(modToDataURI, [
-                            'text/javascript',
-                            style,
-                            du.deref()
-                        ]);
+                        module.toDataURI('text/javascript', style, du.deref());
                     }
                 ]);
             };
             chr.addConstraintListener(modAddStyle$1, [new Var()], addStyle => {
                 let varrefs0 = [];
-                let style = addStyle.args[0];
+                let style = addStyle._$0;
                 if (Constraint.allAlive([addStyle])) {
                     chr.remove(addStyle);
-                    body(style);
+                    _body(style);
                 }
             });
         })();
         (() => {
-            let body = (name, obj) => {
+            let _body = (name, obj) => {
                 var filesOut, link = new Var();
                 chr.cont([
                     () => {
                         filesOut.appendChild(link.deref());
                     },
                     () => {
-                        chr.add(modMkLink, [
-                            name,
-                            obj,
-                            link.deref()
-                        ]);
+                        module.mkLink(name, obj, link.deref());
                     },
                     () => {
                         filesOut.style.display = 'inline';
@@ -153,16 +149,16 @@
                 new Var()
             ], saveFile => {
                 let varrefs0 = [];
-                let name = saveFile.args[0];
-                let obj = saveFile.args[1];
+                let name = saveFile._$0;
+                let obj = saveFile._$1;
                 if (Constraint.allAlive([saveFile])) {
                     chr.remove(saveFile);
-                    body(name, obj);
+                    _body(name, obj);
                 }
             });
         })();
         (() => {
-            let body = (name, obj, link) => {
+            let _body = (name, obj, link) => {
                 var a, res = new Var();
                 chr.cont([
                     () => {
@@ -178,11 +174,7 @@
                         a.href = res.deref();
                     },
                     () => {
-                        chr.add(modToDataURI, [
-                            'text/javascript',
-                            obj,
-                            res.deref()
-                        ]);
+                        module.toDataURI('text/javascript', obj, res.deref());
                     },
                     () => {
                         a.target = '__blank';
@@ -201,18 +193,18 @@
                 new Var()
             ], mkLink => {
                 let varrefs0 = [];
-                let obj = mkLink.args[1];
-                let link = mkLink.args[2];
-                Var.wait(mkLink.args[0], name => {
+                let obj = mkLink._$1;
+                let link = mkLink._$2;
+                Var.wait(mkLink._$0, name => {
                     if (Constraint.allAlive([mkLink])) {
                         chr.remove(mkLink);
-                        body(name, obj, link);
+                        _body(name, obj, link);
                     }
                 });
             });
         })();
         (() => {
-            let body = (obj, res, mime) => {
+            let _body = (obj, res, mime) => {
                 var encoded;
                 chr.cont([
                     () => {
@@ -229,21 +221,21 @@
                 new Var()
             ], toDataURI => {
                 let varrefs0 = [];
-                let res = toDataURI.args[2];
+                let res = toDataURI._$2;
                 Var.all([
-                    toDataURI.args[0],
-                    toDataURI.args[1]
+                    toDataURI._$0,
+                    toDataURI._$1
                 ]).waitApply((mime, obj) => {
                     if (Constraint.allAlive([toDataURI])) {
                         chr.remove(toDataURI);
-                        body(obj, res, mime);
+                        _body(obj, res, mime);
                     }
                 });
             });
         })();
         let outputContainer = document.getElementById('outputContainer');
         (() => {
-            let body = (div, elem) => {
+            let _body = (div, elem) => {
                 chr.cont(() => {
                     Utils.assign(div, document.createElement(elem));
                 });
@@ -253,53 +245,47 @@
                 new Var()
             ], makeElem => {
                 let varrefs0 = [];
-                let div = makeElem.args[1];
-                Var.wait(makeElem.args[0], elem => {
+                let div = makeElem._$1;
+                Var.wait(makeElem._$0, elem => {
                     if (Constraint.allAlive([makeElem])) {
                         chr.remove(makeElem);
-                        body(div, elem);
+                        _body(div, elem);
                     }
                 });
             });
         })();
         (() => {
-            let body = div => {
+            let _body = div => {
                 chr.cont(() => {
-                    chr.add(modMakeElem, [
-                        'div',
-                        div
-                    ]);
+                    module.makeElem('div', div);
                 });
             };
             chr.addConstraintListener(modMakeDiv$1, [new Var()], makeDiv => {
                 let varrefs0 = [];
-                let div = makeDiv.args[0];
+                let div = makeDiv._$0;
                 if (Constraint.allAlive([makeDiv])) {
                     chr.remove(makeDiv);
-                    body(div);
+                    _body(div);
                 }
             });
         })();
         (() => {
-            let body = span => {
+            let _body = span => {
                 chr.cont(() => {
-                    chr.add(modMakeElem, [
-                        'span',
-                        span
-                    ]);
+                    module.makeElem('span', span);
                 });
             };
             chr.addConstraintListener(modMakeSpan$1, [new Var()], makeSpan => {
                 let varrefs0 = [];
-                let span = makeSpan.args[0];
+                let span = makeSpan._$0;
                 if (Constraint.allAlive([makeSpan])) {
                     chr.remove(makeSpan);
-                    body(span);
+                    _body(span);
                 }
             });
         })();
         (() => {
-            let body = (div, id, clazz) => {
+            let _body = (div, id, clazz) => {
                 chr.cont([
                     () => {
                         div.deref().setAttribute('class', clazz);
@@ -308,7 +294,7 @@
                         Var.deref(div).setAttribute('id', id);
                     },
                     () => {
-                        chr.add(modMakeDiv, [div]);
+                        module.makeDiv(div);
                     }
                 ]);
             };
@@ -318,17 +304,17 @@
                 new Var()
             ], makeDiv => {
                 let varrefs0 = [];
-                let id = makeDiv.args[0];
-                let clazz = makeDiv.args[1];
-                let div = makeDiv.args[2];
+                let id = makeDiv._$0;
+                let clazz = makeDiv._$1;
+                let div = makeDiv._$2;
                 if (Constraint.allAlive([makeDiv])) {
                     chr.remove(makeDiv);
-                    body(div, id, clazz);
+                    _body(div, id, clazz);
                 }
             });
         })();
         (() => {
-            let body = (e, f) => {
+            let _body = (e, f) => {
                 var ret = new Var();
                 chr.cont(() => {
                     e.addEventListener('dragover', function (e) {
@@ -342,16 +328,16 @@
                 new Var()
             ], ondragover => {
                 let varrefs0 = [];
-                let e = ondragover.args[0];
-                let f = ondragover.args[1];
+                let e = ondragover._$0;
+                let f = ondragover._$1;
                 if (Constraint.allAlive([ondragover])) {
                     chr.remove(ondragover);
-                    body(e, f);
+                    _body(e, f);
                 }
             });
         })();
         (() => {
-            let body = (e, f) => {
+            let _body = (e, f) => {
                 var ret = new Var();
                 chr.cont(() => {
                     e.addEventListener('dragleave', function (e) {
@@ -365,16 +351,16 @@
                 new Var()
             ], ondragleave => {
                 let varrefs0 = [];
-                let e = ondragleave.args[0];
-                let f = ondragleave.args[1];
+                let e = ondragleave._$0;
+                let f = ondragleave._$1;
                 if (Constraint.allAlive([ondragleave])) {
                     chr.remove(ondragleave);
-                    body(e, f);
+                    _body(e, f);
                 }
             });
         })();
         (() => {
-            let body = (e, f) => {
+            let _body = (e, f) => {
                 var ret = new Var();
                 chr.cont(() => {
                     e.addEventListener('drop', function (e) {
@@ -388,23 +374,19 @@
                 new Var()
             ], ondrop => {
                 let varrefs0 = [];
-                let e = ondrop.args[0];
-                let f = ondrop.args[1];
+                let e = ondrop._$0;
+                let f = ondrop._$1;
                 if (Constraint.allAlive([ondrop])) {
                     chr.remove(ondrop);
-                    body(e, f);
+                    _body(e, f);
                 }
             });
         })();
         (() => {
-            let body = (e, f) => {
+            let _body = (e, f) => {
                 var v = new Var();
                 chr.cont(() => {
-                    chr.add(modPref, [
-                        e,
-                        f,
-                        v.deref()
-                    ]);
+                    module.pref(e, f, v.deref());
                 });
             };
             chr.addConstraintListener(modPrev$2, [
@@ -412,16 +394,16 @@
                 new Var()
             ], prev => {
                 let varrefs0 = [];
-                let e = prev.args[0];
-                let f = prev.args[1];
+                let e = prev._$0;
+                let f = prev._$1;
                 if (Constraint.allAlive([prev])) {
                     chr.remove(prev);
-                    body(e, f);
+                    _body(e, f);
                 }
             });
         })();
         (() => {
-            let body = (e, f, ret) => {
+            let _body = (e, f, ret) => {
                 chr.cont([
                     () => {
                         Utils.assign(ret, false);
@@ -443,17 +425,17 @@
                 new Var()
             ], prev => {
                 let varrefs0 = [];
-                let e = prev.args[0];
-                let f = prev.args[1];
-                let ret = prev.args[2];
+                let e = prev._$0;
+                let f = prev._$1;
+                let ret = prev._$2;
                 if (Constraint.allAlive([prev])) {
                     chr.remove(prev);
-                    body(e, f, ret);
+                    _body(e, f, ret);
                 }
             });
         })();
         (() => {
-            let body = (fs, e) => {
+            let _body = (fs, e) => {
                 chr.cont(() => {
                     Utils.assign(fs, e.dataTransfer.files);
                 });
@@ -463,24 +445,21 @@
                 new Var()
             ], getFiles => {
                 let varrefs0 = [];
-                let fs = getFiles.args[1];
-                Var.wait(getFiles.args[0], e => {
+                let fs = getFiles._$1;
+                Var.wait(getFiles._$0, e => {
                     if (Constraint.allAlive([getFiles])) {
                         chr.remove(getFiles);
-                        body(fs, e);
+                        _body(fs, e);
                     }
                 });
             });
         })();
         (() => {
-            let body = (js, name) => {
+            let _body = (js, name) => {
                 var jsOut;
                 chr.cont([
                     () => {
-                        chr.add(modSaveFile, [
-                            name,
-                            jsOut
-                        ]);
+                        module.saveFile(name, jsOut);
                     },
                     () => {
                         jsOut = Compiler.parseCompileGenerate(js);
@@ -492,11 +471,11 @@
                 new Var()
             ], pcgSave => {
                 let varrefs0 = [];
-                let name = pcgSave.args[0];
-                Var.wait(pcgSave.args[1], js => {
+                let name = pcgSave._$0;
+                Var.wait(pcgSave._$1, js => {
                     if (Constraint.allAlive([pcgSave])) {
                         chr.remove(pcgSave);
-                        body(js, name);
+                        _body(js, name);
                     }
                 });
             });
@@ -505,7 +484,7 @@
             return new FileReader();
         };
         (() => {
-            let body = f => {
+            let _body = f => {
                 var r, e = new Var();
                 chr.cont([
                     () => {
@@ -527,18 +506,18 @@
                 new Var()
             ], fileReader => {
                 let varrefs0 = [];
-                let n = fileReader.args[1];
-                let arr = fileReader.args[2];
-                Var.wait(fileReader.args[0], f => {
+                let n = fileReader._$1;
+                let arr = fileReader._$2;
+                Var.wait(fileReader._$0, f => {
                     if (Constraint.allAlive([fileReader])) {
                         chr.remove(fileReader);
-                        body(f);
+                        _body(f);
                     }
                 });
             });
         })();
         (() => {
-            let body = e => {
+            let _body = e => {
                 var fs = new Var(), fss;
                 chr.cont([
                     () => {
@@ -548,19 +527,16 @@
                         fss = Array.prototype.slice.apply(fs.deref());
                     },
                     () => {
-                        chr.add(modGetFiles, [
-                            e,
-                            fs.deref()
-                        ]);
+                        module.getFiles(e, fs.deref());
                     }
                 ]);
             };
             chr.addConstraintListener(modHandleFiles$1, [new Var()], handleFiles => {
                 let varrefs0 = [];
-                let e = handleFiles.args[0];
+                let e = handleFiles._$0;
                 if (Constraint.allAlive([handleFiles])) {
                     chr.remove(handleFiles);
-                    body(e);
+                    _body(e);
                 }
             });
         })();
@@ -568,33 +544,24 @@
             resolve.handleFiles(e);
         };
         (() => {
-            let body = () => {
+            let _body = () => {
                 var div = new Var(), t, span = new Var();
                 chr.cont([
                     () => {
-                        chr.add(modOndrop, [
-                            div.deref(),
-                            drop
-                        ]);
+                        module.ondrop(div.deref(), drop);
                     },
                     () => {
-                        chr.add(modOndragleave, [
-                            div.deref(),
-                            function () {
-                                console.log('dragleaving...');
-                            }
-                        ]);
+                        module.ondragleave(div.deref(), function () {
+                            console.log('dragleaving...');
+                        });
                     },
                     () => {
-                        chr.add(modOndragover, [
-                            div.deref(),
-                            function () {
-                                console.log('dragover...');
-                            }
-                        ]);
+                        module.ondragover(div.deref(), function () {
+                            console.log('dragover...');
+                        });
                     },
                     () => {
-                        chr.add(modAddStyle, [ddstyle]);
+                        module.addStyle(ddstyle);
                     },
                     () => {
                         outputContainer.appendChild(span.deref());
@@ -606,7 +573,7 @@
                         span.deref().setAttribute('id', 'filesOut');
                     },
                     () => {
-                        chr.add(modMakeSpan, [span.deref()]);
+                        module.makeSpan(span.deref());
                     },
                     () => {
                         outputContainer.appendChild(div.deref());
@@ -618,11 +585,7 @@
                         t = document.createTextNode('drop files to compile here...');
                     },
                     () => {
-                        chr.add(modMakeDiv, [
-                            'drop',
-                            'drop',
-                            div.deref()
-                        ]);
+                        module.makeDiv('drop', 'drop', div.deref());
                     }
                 ]);
             };
@@ -630,78 +593,80 @@
                 let varrefs0 = [];
                 if (Constraint.allAlive([init])) {
                     chr.remove(init);
-                    body();
+                    _body();
                 }
             });
         })();
     };
-    let init = (chr, modbase, modname = 'CompilerPanel') => {
-        let mod;
-        if (modbase === undefined) {
+    let init = (chr, modname = 'CompilerPanel', base) => {
+        if (base === undefined) {
             chr.Modules = chr.Modules || {};
-            modbase = chr.Modules;
+            base = chr.Modules;
         }
-        modbase[modname] = modbase[modname] || {};
-        mod = modbase[modname];
+        base.module = base.module || {};
+        base.resolve = base.resolve || {};
+        base.module[modname] = base.module[modname] || {};
+        let mod = base.module[modname];
+        base.resolve[modname] = base.resolve[modname] || {};
+        let res = base.resolve[modname];
         let temp = {};
         temp.addScript = temp.addScript || function () {
-            chr.addConstraint(modname + '.addScript', arguments);
+            chr.add(modname + '.addScript', arguments);
         };
         temp.toDataURI = temp.toDataURI || function () {
-            chr.addConstraint(modname + '.toDataURI', arguments);
+            chr.add(modname + '.toDataURI', arguments);
         };
         temp.addStyle = temp.addStyle || function () {
-            chr.addConstraint(modname + '.addStyle', arguments);
+            chr.add(modname + '.addStyle', arguments);
         };
         temp.saveFile = temp.saveFile || function () {
-            chr.addConstraint(modname + '.saveFile', arguments);
+            chr.add(modname + '.saveFile', arguments);
         };
         temp.mkLink = temp.mkLink || function () {
-            chr.addConstraint(modname + '.mkLink', arguments);
+            chr.add(modname + '.mkLink', arguments);
         };
         temp.makeElem = temp.makeElem || function () {
-            chr.addConstraint(modname + '.makeElem', arguments);
+            chr.add(modname + '.makeElem', arguments);
         };
         temp.makeDiv = temp.makeDiv || function () {
-            chr.addConstraint(modname + '.makeDiv', arguments);
+            chr.add(modname + '.makeDiv', arguments);
         };
         temp.makeSpan = temp.makeSpan || function () {
-            chr.addConstraint(modname + '.makeSpan', arguments);
+            chr.add(modname + '.makeSpan', arguments);
         };
         temp.ondragover = temp.ondragover || function () {
-            chr.addConstraint(modname + '.ondragover', arguments);
+            chr.add(modname + '.ondragover', arguments);
         };
         temp.ondragleave = temp.ondragleave || function () {
-            chr.addConstraint(modname + '.ondragleave', arguments);
+            chr.add(modname + '.ondragleave', arguments);
         };
         temp.ondrop = temp.ondrop || function () {
-            chr.addConstraint(modname + '.ondrop', arguments);
+            chr.add(modname + '.ondrop', arguments);
         };
         temp.prev = temp.prev || function () {
-            chr.addConstraint(modname + '.prev', arguments);
+            chr.add(modname + '.prev', arguments);
         };
         temp.pref = temp.pref || function () {
-            chr.addConstraint(modname + '.pref', arguments);
+            chr.add(modname + '.pref', arguments);
         };
         temp.f = temp.f || function () {
-            chr.addConstraint(modname + '.f', arguments);
+            chr.add(modname + '.f', arguments);
         };
         temp.getFiles = temp.getFiles || function () {
-            chr.addConstraint(modname + '.getFiles', arguments);
+            chr.add(modname + '.getFiles', arguments);
         };
         temp.pcgSave = temp.pcgSave || function () {
-            chr.addConstraint(modname + '.pcgSave', arguments);
+            chr.add(modname + '.pcgSave', arguments);
         };
         temp.fileReader = temp.fileReader || function () {
-            chr.addConstraint(modname + '.fileReader', arguments);
+            chr.add(modname + '.fileReader', arguments);
         };
         temp.handleFiles = temp.handleFiles || function () {
-            chr.addConstraint(modname + '.handleFiles', arguments);
+            chr.add(modname + '.handleFiles', arguments);
         };
         temp.init = temp.init || function () {
-            chr.addConstraint(modname + '.init', arguments);
+            chr.add(modname + '.init', arguments);
         };
-        let res = {};
         for (let i in temp) {
             let f = temp[i];
             mod[i] = mod[i] || f;
@@ -712,13 +677,8 @@
                 chr.resolveOne(fres);
             };
         }
-        compilerPanel(chr, mod, res, modbase, modname);
-        return {
-            base: modbase,
-            module: mod,
-            resolve: res,
-            modname: modname
-        };
+        compilerPanel(chr, mod, res, base, modname);
+        return base;
     };
     let CompilerPanel = {};
     CompilerPanel.VERSION = version;

@@ -63,11 +63,17 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     'use strict';
     let version = "0.0.1";
 
-    let Utils = require('./utils.js');
+    let Constraint = require('/constraint.js');
+    let Var = require('/var.js');
+    let Index = require('/index.js');
+    let Match = require('/match.js');
+    let Utils = require('/utils.js');
     let Store = require('./store.js');
-    let Constraint = require('./constraint.js');
-    let Var = require('./var.js');
 
+    let nameAritySym = Constraint.nameAritySym;
+    let argsSym = Constraint.argsSym;
+	let idSym = Constraint.idSym;
+	let aritySym = Constraint.aritySym;
 
 	let CHR = function() {
 		this.Store = new Store(this);
@@ -93,36 +99,68 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 		return key;
 	};
 
-	CHR.prototype.addConstraint = function(n,args) {
-		let sargs = Array.prototype.slice.call(args);
-		let c = new Constraint(n,sargs);
-		let self = this;
-		c.id = self.Store.newID();
-		this.cont(function() {
-			let na = c.nameArity;
-			if (!self.handleAdd(c))
-				return;
-			self.Store.add(na,c.args,c.id,c);
-			self.addCont(na,sargs,c);
-		});
-		return c;
-	};
+// 	CHR.prototype.addConstraint = function(n,args=[]) {
+// 	    let c;
+// 	    if (Constraint.isConstraint(n)) {
+// 	      c = n;
+// 	      // Constraint.addArgs(c,args);
+// 	    }
+// 	    else {
+// 	      let sargs = Array.prototype.slice.call(args);
+// 	  		c = Constraint.makeConstraint(n,sargs);
+// 	    }
+// 		let self = this;
+// 		c[idSym] = self.Store.newID();
+// if (this.debug === true) {
+//   console.log('ADD',c.show());
+// }
+// 		this.cont(function() {
+// 			let na = c[nameAritySym];
+// 			if (!self.handleAdd(c))
+// 				return;
+// 			self.Store.add(na,c[argsSym],c[idSym],c);
+// 			self.addCont(na,c);
+// 		});
+// 		return c;
+// 	};
 
-	CHR.prototype.add = function(n,args) {
-		let c = new Constraint(n,args);
+	CHR.prototype.add = function(c,n,args) {
+		if (Constraint.isConstraint(c)) {
+            c = Constraint.clone(c);
+			if (n !== undefined) {
+				if (Array.isArray(n) && n.length > 0) {
+					Constraint.addArgs(c,n);			
+				}
+				else if (n.constructor === String) {
+					Constraint.setName(c,n);
+					args !== undefined && args.length > 0 && Constraint.addArgs(c,args);
+				}				
+			}
+		}
+	    else { // if (!Constraint.isConstraint(c))
+			c = Constraint.makeConstraint(c,n,args);
+		}
+if (this.debug === true) {
+  console.log('ADD',c.show());
+}
 		let key = this.Store.newID();
-		c.id = key;
-		let na = c.nameArity;
+        // let key = Utils.randomhex();
+		c[idSym] = key;
+		let na = c[nameAritySym];
 		if (!this.handleAdd(c))
 			return;
-		this.Store.add(na,c.args,key,c);
-		this.addCont(na,args,c);
+		this.Store.add(na,c[argsSym],key,c);
+		this.addCont(na,c);
 		return c;
 	};
 
-	CHR.prototype.addCont = function(na,args,c) {
-		if (!this.ConstraintListeners.has(na))
-			return;
+	CHR.prototype.addCont = function(na,c) {
+		if (!this.ConstraintListeners.has(na)) {
+      if (this.debug === true) {
+        console.log('NOT FOUND',na);
+      }
+      return;
+    }
 		else if (!this.ConstraintListeners.threshold(na)) {
 			let it = this.ConstraintListeners.valueIter(na);
 			if (it) {
@@ -131,24 +169,24 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 		}
 		else {
 			let iargs = [];
-			let len = args.length;
+			let len = c[aritySym];
 			for (let i = 0; i < len; i++) {
-				let a = args[i];
+				let a = c[argsSym][i];
 				let v = a ? a.valueOf() : a;
-				if (v.constructor === Number || v.constructor === String) {
+				if (v && (v.constructor === Number || v.constructor === String)) {
 					iargs.push({i:i,f:(function(ref) { return function(idx) {
 						let ix = idx[ref];
 						if (ix !== undefined)
-							return Utils.iter(ix); 
-					}})(v)}); 
+							return Utils.iter(ix);
+					}})(v)});
 				};
 			};
 
-			this.ConstraintListeners.select(na,{index:iargs},{},function(f) { 
-				if (!Constraint.isAlive(c))
+			this.ConstraintListeners.select(na,{index:iargs},{},function(f) {
+				if (!Constraint.alive(c))
 					return false;
 				f(c);
-				return true; 
+				return true;
 			});
 
 		}
@@ -160,7 +198,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 		let len = arr.length;
 		let ret = true;
 		for (let i = 0; i < len; i++) {
-			ret = arr[i].f(c) && ret; 
+			ret = arr[i].f(c) && ret;
 		}
 		return ret;
 	};
@@ -169,9 +207,9 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 	CHR.prototype.handleAdd = function(c) { return this.handleAddRem(this.onAddhandler,c); };
 	CHR.prototype.handleRemove = function(c) { return this.handleAddRem(this.onRemovehandler,c); };
 
-	CHR.prototype.handleAddRem = function(onArr,c) { 
+	CHR.prototype.handleAddRem = function(onArr,c) {
 		let r1 = handle(onArr.all,c);
-		let r2 = handle(onArr.na[c.nameArity],c);
+		let r2 = handle(onArr.na[c[nameAritySym]],c);
 		return r1 && r2;
 	};
 
@@ -188,7 +226,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 		let arr;
 		if (na === undefined) {
 			arr = this[handler].all;
-			let id = this.handlerKeys++; 
+			let id = this.handlerKeys++;
 			arr.push({id:id,f:f});
 			return {id:id};
 		}
@@ -198,7 +236,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 				arr = [];
 				this[handler].na[na] = arr;
 			}
-			let id = this.handlerKeys++; 
+			let id = this.handlerKeys++;
 			arr.push({id:id,f:f});
 			return {na:na,id:id};
 		}
@@ -207,7 +245,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 	let removeHandlerArr = function(id,arr) {
 		if (arr === undefined)
 			return;
-		let ix = arr.findIndex(e => e.id === id);
+		let ix = arr.findIndex(e => e[idSym] === id);
 		if (ix >= 0) {
 			arr.splice(ix,1);
 		}
@@ -217,22 +255,38 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 		if (handlerID === undefined)
 			return;
 		let id = handlerID.id;
-		let na = handlerID.na; 
+		let na = handlerID.na;
 		if (na === undefined)
 			removeHandlerArr(id,this.onRemovehandler.all);
 		else
 			removeHandlerArr(id,this.onRemovehandler.na[na]);
 	}
 
-	CHR.prototype.remove = function(c) {
+	CHR.prototype.remove = function(c,f) {
 		if (Array.isArray(c)) {
 			let self = this;
 			c.map(function(a) { self.remove(a); })
 			return;
 		}
-		this.Store.remove(c.nameArity,c.args,c.id);
-		c.alive = false;
-		c.remove();
+		if (c.constructor === String) {
+			let rem = this.doRemove.bind(this);
+			if (f === undefined)
+				this.eachConstraint(c,rem);
+			else
+				this.eachConstraint(c,function(c2) { f && f(c2) && rem(c2); });
+			return;
+		}
+
+if (this.debug === true) {
+  console.log('REMOVE',c.show());
+}
+		this.doRemove(c);
+	};
+
+	CHR.prototype.doRemove = function(c) {
+		this.Store.remove(c[nameAritySym],c[argsSym],c[idSym]);
+		c[Constraint.aliveSym] = false;
+		Constraint.remove(c);
 		this.handleRemove(c);
 	};
 
@@ -245,13 +299,13 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 			func = excl;
 			excl = {};
 		}
-		// else 
+		// else
 		// 	excl = Utils.excl(excl);
 		this.Store.select(na,opts,excl,func);
 	}
 
 	CHR.prototype.delay = function(c,it) {
-		if (!c.isAlive())
+		if (!Constraint.alive(c))
 			return;
 		let f = it.next();
 		if (it.more()) {
@@ -280,25 +334,30 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 		this.trampoline = b;
 	}
 
-	CHR.prototype.contPlain = function(f) { 
+	CHR.prototype.contPlain = function(f) {
 		if (typeof f == "function")
 			f();
-		else 
+		else
 			f.forEach(function(func) { func(); });
 	}
 
 
-	CHR.prototype.contTramp = function(f) { 
+	CHR.prototype.contTramp = function(f) {
 		if (typeof f == "function")
 			this.Conts.push(f);
-		else 
+		else
 			this.Conts = this.Conts.concat(f);
 	}
 
 	CHR.prototype.cont = CHR.prototype.contTramp
 
 
-	CHR.prototype.resolveOne = function(f) {
+    CHR.prototype.resolveCall = function(c,n,args) {
+        let self = this;
+        this.resolveOne(function() { self.call(c,n,args); });
+	}
+
+    CHR.prototype.resolveOne = function(f) {
 		let point = this.Conts.length;
 		// if (point < 0)
 		// 	point = 0;
@@ -313,17 +372,48 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 			this.Conts.pop()();
 	};
 
-
+	let uniqueId = 0;
+	CHR.prototype.getUniqueN = function() { return uniqueId++; };
 
 	CHR.prototype.getConstraints = function(na) { return this.Store.getItems(na); }
 	CHR.prototype.eachConstraint = function(na,f) { this.Store.each(na,f); }
 
 	CHR.VERSION = version;
 
+	CHR.Constraint = Constraint;
+	CHR.Var = Var;
+	CHR.Index = Index;
+	CHR.Match = Match;
+	CHR.Utils = Utils;
+	CHR.Store = Store;
+
+	CHR.all = Var.all;
+	CHR.wait = Var.wait;
+
+	// CHR.id = Constraint.id ;
+	// CHR.name = Constraint.name; 
+	// CHR.nameArity = Constraint.nameArity;
+	// CHR.args = Constraint.args; 
+	// CHR.alive = Constraint.alive;
+	// CHR.allAlive = Constraint.allAlive;
+
+	CHR.show = Constraint.show;
+	CHR.makeConstraint = Constraint.makeConstraint;
+
+	CHR.eq = Index.eq;
+
+	CHR.assign = Utils.assign;
+
+	// convenience functions
+
+	CHR.prototype.call = CHR.prototype.add
+
+
     return CHR;
 }));
 
-},{"./constraint.js":"/constraint.js","./store.js":"/store.js","./utils.js":"/utils.js","./var.js":"/var.js"}],"/constraint.js":[function(require,module,exports){
+},{"./store.js":"/store.js","/constraint.js":"/constraint.js","/index.js":"/index.js","/match.js":"/match.js","/utils.js":"/utils.js","/var.js":"/var.js"}],"/constraint.js":[function(require,module,exports){
+
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
         define([], factory);
@@ -337,87 +427,207 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     let version = "0.0.1";
 
 
-	let Checks = require('./checks.js');
-	let Var = require('./var.js');
+    let Checks = require('./checks.js');
+    let Var = require('./var.js');
 
-	let isAlive = function(c) { return c.isAlive(); }
-	let allAlive = function(carr) {
-		let len = carr.length; 
-		for (let i = 0; i < len; i++) {
-			if (!carr[i].isAlive())
-				return false;
-		}
-		return true;
-	}
+    let alive = function(c) { return c[aliveSym]; }
+    let allAlive = function(carr) {
+        let len = carr.length;
+        for (let i = 0; i < len; i++) {
+            if (!alive(carr[i]))
+                return false;
+        }
+        return true;
+    }
+
+    let nameSym = Symbol('name');
+    let aritySym = Symbol('arity');
+    let nameAritySym = Symbol('nameArity');
+    let argsSym = Symbol('args');
+    let idSym = Symbol('id');
+    let aliveSym = Symbol('alive');
+    // let isAliveSym = Symbol('isAlive');
+
+    let nargs = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,17,18,19,20,21,22,23,24,25,26,27,28.29,30,31,32];
+    let argKeySyms = nargs.map((_n,i) => '_$' + i);
+
+    let Constr = function(name,args,obj) {
+        if (!args)
+            args = [];
+        this[nameSym] = name;
+        this[aritySym] = args.length;
+        this[nameAritySym] = this[nameSym] + "/" + this[aritySym];
+        this[argsSym] = args;
+        this[idSym] = null;
+        this[aliveSym] = true;
+        this.obj = obj;
+        if (obj) {
+            for (var i = 0; i < args.length; i++) {
+                this[argKeySyms[i]] = obj[args[i]];
+            }
+        }
+        else {
+            for (var i = 0; i < args.length; i++) {
+                this[argKeySyms[i]] = args[i];
+            }           
+        }
+        // cannot store functions...
+        // this.onRemoveArr = [];
+    }
 
 
-	let Constr = function(name, args) {
-		if (!args) 
-			args = [];
-	  this.name = name;
-	  this.arity = args.length;
-	  this.nameArity = this.name + "/" + this.arity;
-	  this.args = args;
-	  this.id = null;
-	  this.alive = true;
-	  // cannot store functions...
-	  // this.onRemoveArr = [];
-	}
-
-	// let isConstraint = function(c) { return c != null && c.__proto__.constructor.name == 'Constraint'; }
-	let isConstraint = function(c) { return c != null && c.constructor === Constraint; }
 
 
+    let isConstraint = function(c) { return c[Constraint.nameSym] !== undefined }
+    // let isConstraint = function(c) { return c != null && c.__proto__.constructor.name == 'Constraint'; }
+    // let isConstraint = function(c) { return c != null && c.constructor === Constraint; }
 
-	// Constr.prototype.onRemove = function(f) { this.onRemoveArr.push(f); }
+    let clone = function(src) { 
+        let dest = {};
+        dest[nameSym] = src[nameSym];
+        dest[aritySym] = src[aritySym];
+        dest[nameAritySym] = src[nameAritySym];
+        dest[argsSym] = src[argsSym].slice();
+        dest[idSym] = null;
+        dest[aliveSym] = true;
+        let n = dest[aritySym];
+        dest.obj = src.obj;
+        for (var i = 0; i < n; i++)
+            dest[argKeySyms[i]] = src[argKeySyms[i]];
+        return dest;
+    }
 
-	Constr.prototype.remove = function() {
-		// this.alive = false;
-		let arr = this.onRemoveArr;
-		this.onRemoveArr = undefined;
-		if (arr && arr.length) {
-			arr.map(function(f) { f(); });
-		}
-	}
 
-	Constr.prototype.equal = function (v) { return this.id == v.id; }
+    let id = function(c) { return c[idSym]; };
+    let name = function(c) { return c[nameSym]; };
+    let nameArity = function(c) { return c[nameAritySym]; };
+    let args = function(c,i) { return c[argKeySyms[i]]; };
+    let getObj = function(c) { return c.obj; };
 
-	Constr.prototype.isAlive = function() { return this.alive; }
 
-	Constr.prototype.show = function () { return this.nameArity +  this.showArgs() + '#' + this.id; }
+    let resetNameArity = function(c) { c[nameAritySym] = c[nameSym] + "/" + c[aritySym]; }
 
-	Constr.prototype.showArgs = function () {
-		if (this.args.length == 0)
-			return '' 
-		let res = '(';
-		for (let i = 0; i < this.args.length; i++) {
-			let a = this.args[i];
-			let r = a.valueOf ? a.valueOf() : a;
-			if (Var.isVar(r))
-				res += r.show();
-			else if (Checks.isObject(r))
-				res += JSON.stringify(this.args[i].valueOf());
-			else if (Checks.isString(r))
-				res += '\'' + this.args[i].valueOf() + '\'';
-			else 
-				res += this.args[i].valueOf();
-			if (i + 1 < this.args.length)
-				res += ','
-		}
-		res += ')'
-		return res;
-	}
+    let setName = function(c,n) { 
+        c[nameSym] = n;
+        resetNameArity(c);
+    }
 
-	Constr.prototype.toString = function() { return this.show(); }
+    let addArgs = function(c,args) { 
+        let ca = c[aritySym];
+        c[aritySym] += args.length;
+        resetNameArity(c);
+        let len = ca + args.length;
+        for (let i = ca, ii = 0; i < len; i++, ii++) {
+            let a = args[ii];
+            c[argsSym].push(a);
+            c[argKeySyms[i]] = a;
+        }
+    }
 
-	let Constraint = Constr;
+    let makeConstraint = function(obj,name,args=[]) {
+        if (obj.constructor === String) {
+            args = name;
+            name = obj;
+            return new Constr(name,args);
+        }
+        else {
+            if (Array.isArray(name)) {
+                args = name;
+                name = obj.constructor.name;            
+                return new Constr(name,args,obj);
+            }
+            else {
+                name = name || obj.constructor.name;
+                return new Constr(name,args,obj);
+            }
+        }
+    }
 
-	Constraint.isAlive = isAlive;
-	Constraint.allAlive = allAlive;
-	Constraint.isConstraint = isConstraint;
-	Constraint.VERSION = version;
 
-	return Constraint;
+    let eq = function(c1,c2) { let i = id(c1); return (i !== null && i === id(c)); }
+
+    // Constr.prototype.clone = function(c) { return makeConstraint(c[nameSym],c[argsSym]); }
+    // Constr.prototype.onRemove = function(f) { this.onRemoveArr.push(f); }
+
+    let remove = function(c) {
+        let arr = c.onRemoveArr;
+        c.onRemoveArr = undefined;
+        if (arr && arr.length) {
+            arr.map(function(f) { f(); });
+        }
+    }
+
+
+    // Constr.prototype.equal = function (v) { return this[idSym] == v[idSym]; }
+    // Constr.prototype.isAlive = function() { return this[aliveSym]; }
+
+    let showArgs = function (c) {
+        if (c[argsSym].length == 0)
+            return ''
+        let res = '(';
+        for (let i = 0; i < c[argsSym].length; i++) {
+            let a = c[argsSym][i];
+      if (a === undefined || a === null)
+        res += a;
+      else {
+        let r = a.valueOf ? a.valueOf() : a;
+            if (Var.isVar(r))
+                res += r.show();
+            else if (Checks.isObject(r))
+                res += JSON.stringify(r);
+            else if (Checks.isString(r))
+                res += '\'' + r + '\'';
+            else
+                res += r;
+            }
+      if (i + 1 < c[argsSym].length)
+                res += ','
+        }
+        res += ')'
+        return res;
+    }
+
+    let show = function(c) { return c[nameAritySym] +  showArgs(c) + '#' + c[idSym]; }
+
+    // Constr.prototype.show = function () { return show(this); }
+
+    Constr.prototype.toString = function() { return show(this); }
+
+    let Constraint = {};
+
+    Constraint.isConstraint = isConstraint;
+    Constraint.clone = clone;
+
+    Constraint.nameSym = nameSym;
+    Constraint.aritySym = aritySym;
+    Constraint.nameAritySym = nameAritySym;
+    Constraint.argsSym = argsSym;
+    Constraint.idSym = idSym;
+    Constraint.aliveSym = aliveSym;
+
+    Constraint.argKeySyms = argKeySyms;
+
+    Constraint.setName = setName;
+    Constraint.addArgs = addArgs;
+    Constraint.id = id ;
+    Constraint.name = name; 
+    Constraint.nameArity = nameArity;
+    Constraint.args = args; 
+    Constraint.alive = alive;
+    Constraint.obj = getObj;
+
+    // Constraint.isAlive = isAlive;
+    Constraint.allAlive = allAlive;
+
+    Constraint.show = show;
+
+    Constraint.remove = remove;
+
+    Constraint.VERSION = version;
+
+    Constraint.makeConstraint = makeConstraint;
+
+    return Constraint;
 }));
 
 },{"./checks.js":"/checks.js","./var.js":"/var.js"}],"/index.js":[function(require,module,exports){
@@ -437,6 +647,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
     let Utils = require('./utils.js');
     let Var = require('./var.js');
+    let Constraint = require('./constraint.js');
 
 	let Index = function(store) {
 		this.indexes = mkIdx();
@@ -675,7 +886,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 		let vg = Var.get(v);
 		return  vg === undefined ? null : function(idx,argi,na,keys,items) {
 			return Utils.iterExcl(keys,function(n) { 
-				return items[n] ? f(items[n].args[argi],v) : undefined; 
+				return items[n] ? f(items[n][Constraint.argsSym][argi],v) : undefined; 
 			});
 		}
 	};
@@ -734,7 +945,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
 
 
-},{"./utils.js":"/utils.js","./var.js":"/var.js"}],"/match.js":[function(require,module,exports){
+},{"./constraint.js":"/constraint.js","./utils.js":"/utils.js","./var.js":"/var.js"}],"/match.js":[function(require,module,exports){
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
         define([], factory);
@@ -789,7 +1000,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
 
     let matchKey = Symbol('match');
-
+    // let matchKey = '_$match';
 
 
     let derefWait = function(v,varrefs,f) { Var.wait(VarRef.deref(v,varrefs),f); }
@@ -953,7 +1164,10 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
     Array.prototype[matchKey] = function(o,eq,varrefs,waiter,fail) {
       typeMatch(this,o,eq,varrefs,waiter,fail,function(self,ov) {
-        if (Array.isArray(ov)) {
+        if (ov === self) {
+            return;
+        }
+        else if (Array.isArray(ov)) {
           if (self.length !== ov.length)
             fail && fail();
           else {
@@ -976,7 +1190,10 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
     Object.prototype[matchKey] = function(o,eq,varrefs,waiter,fail) {
       typeMatch(this,o,eq,varrefs,waiter,fail,function(self,ov) {
-        if (Checks.isObject(ov)) {
+        if (ov === self) {
+            return;
+        }
+        else if (Checks.isObject(ov)) {
           // let matchCount = 0;
           for (let k in ov) {
             if (waiter.failed)
@@ -1031,6 +1248,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     let Utils = require('./utils.js');
     let Var = require('./var.js');
     let Index = require('./index.js');
+    let Constraint = require('./constraint.js');
 
 	let Store = function(chr) {
 		this.chr = chr;
@@ -1041,8 +1259,13 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 		this._persistKeys = {};
 	}
 
+    let randomhex = function() {
+        return Math.random().toString(16).slice(2);
+    }
+
 	Store.prototype.newID = function newID() {
 	  this.lastID += 1;
+      // window.hexdigit = randomhex();
 	  return this.lastID;
 	}
 
@@ -1190,7 +1413,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
 		let cs = this.getItems(); 
 		if (na !== undefined && na.constructor === String)
-			cs = cs.filter(function(c) { return c.nameArity === na; });
+			cs = cs.filter(function(c) { return c[Constraint.nameAritySym] === na; });
 		else if (na !== undefined && na.constructor === Number) {
 			n = m;
 			m = na;
@@ -1205,7 +1428,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 			n = cs.length - n;
 
 		cs = cs.slice(m,n); 
-		cs.sort().map(function(c) { console.log(c.show()); })
+		cs.sort().map(function(c) { console.log(Constraint.show(c)); })
 		console.log('constraint#:',cs.length);
 	}
 
@@ -1249,7 +1472,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 }));
 
 
-},{"./index.js":"/index.js","./utils.js":"/utils.js","./var.js":"/var.js"}],"/utils.js":[function(require,module,exports){
+},{"./constraint.js":"/constraint.js","./index.js":"/index.js","./utils.js":"/utils.js","./var.js":"/var.js"}],"/utils.js":[function(require,module,exports){
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
         define([], factory);
@@ -1445,6 +1668,10 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 		return min + Math.floor((max - min) * r);
 	}
 
+    let randomhex = function() {
+        return Math.random().toString(16).slice(2);
+    }
+
 	let Utils = {
 		assign: assign,
 		keys: keys,
@@ -1458,6 +1685,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 		binaryIndexOf: binaryIndexOf,
 		binaryInsert: binaryInsert,
 		binaryRemove: binaryRemove,
+        randomhex:randomhex,
 		log: log,
 		VERSION: version
 	}
@@ -1598,16 +1826,10 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 	Var.prototype.show = function() {
 		if (!this.id)
 			this.id = newID();
-		// let res = 'Var(id:' + this.id;
 		let res = 'Var(id:' + this.id;
-		// if (this.name)
-		// 	res += ', name:' + this.name; 
 
 		if (this.value && this.value !== NoValue)
 			res += ', value:' + this.value;
-
-		// let len = this.onSetArr ? this.onSetArr.length : 0;
-		// res += ', onSetArrLength:' + len;
 
 		res += ")";
 

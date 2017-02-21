@@ -42,22 +42,46 @@ function toDataURI(mime,obj) {
 function initPlayground() {
     let chr = new CHR();
     // console.log(chr);
-    let init = Playground.init(chr,{},'Playground');
+    let base = Playground.init(chr,'Playground');
 
-    init.module.init(testinput);
+    base.module.Playground.init(testinput);
     chr.resolve();
 }
 
 
 function initCompilerPanel() {
     let chr = new CHR();
-    init = CompilerPanel.init(chr,{},'CompilerPanel');
+    init = CompilerPanel.init(chr,'CompilerPanel');
 
     init.module.init();
     chr.resolve();
 }
 
 
+var Constraint = require('/constraint.js');
+
+var chr;
+var init;
+function initTestElem() {
+    chr = new CHR();
+    init = Reactive.init(chr);
+
+    let f = _ => { 
+        chr.reset();
+        init.resolve.Reactive.init();
+    };
+
+    iterate(f,1);
+
+    appendDivText('resolutions:' + chr.res);
+
+    let cs = chr.Store.getItems();
+
+    // appendDivText('constraints:');
+    // cs.sort().forEach(c => appendDivText(Constraint.show(c)));
+    // appendDivText('constraint#:' + cs.length);
+   
+}
 
 window.onload = (function() { initPlayground(); });
 

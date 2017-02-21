@@ -13,6 +13,7 @@
     let Utils = require('./utils.js');
     let Var = require('./var.js');
     let Index = require('./index.js');
+    let Constraint = require('./constraint.js');
 
 	let Store = function(chr) {
 		this.chr = chr;
@@ -23,8 +24,13 @@
 		this._persistKeys = {};
 	}
 
+    let randomhex = function() {
+        return Math.random().toString(16).slice(2);
+    }
+
 	Store.prototype.newID = function newID() {
 	  this.lastID += 1;
+      // window.hexdigit = randomhex();
 	  return this.lastID;
 	}
 
@@ -172,7 +178,7 @@
 
 		let cs = this.getItems(); 
 		if (na !== undefined && na.constructor === String)
-			cs = cs.filter(function(c) { return c.nameArity === na; });
+			cs = cs.filter(function(c) { return c[Constraint.nameAritySym] === na; });
 		else if (na !== undefined && na.constructor === Number) {
 			n = m;
 			m = na;
@@ -187,7 +193,7 @@
 			n = cs.length - n;
 
 		cs = cs.slice(m,n); 
-		cs.sort().map(function(c) { console.log(c.show()); })
+		cs.sort().map(function(c) { console.log(Constraint.show(c)); })
 		console.log('constraint#:',cs.length);
 	}
 

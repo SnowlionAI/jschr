@@ -1,3 +1,6 @@
+// This file is generated: DO NOT CHANGE!
+// Changes will be overwritten...
+
 ((root, factory) => {
     if (typeof define === 'function' && define.amd) {
         define([], factory);
@@ -8,8 +11,13 @@
     }
 })(this, () => {
     'use strict';
+    let Constraint = require('/constraint.js');
+    let Var = require('/var.js');
+    let Index = require('/index.js');
+    let Match = require('/match.js');
+    let Utils = require('/utils.js');
     let version = '0.0.1';
-    let playground = (chr, module, resolve, modbase, modname) => {
+    let playground = (chr, module, resolve, base, modname) => {
         let pointedname = modname ? modname + '.' : '';
         let modAddScript = pointedname + 'addScript';
         let modAddScript$1 = modAddScript + '/1';
@@ -66,7 +74,7 @@
         let modInit = pointedname + 'init';
         let modInit$1 = modInit + '/1';
         (() => {
-            let body = js => {
+            let _body = js => {
                 var du = new Var(), script;
                 chr.cont([
                     () => {
@@ -79,25 +87,21 @@
                         script = document.createElement('script');
                     },
                     () => {
-                        chr.add(modToDataURI, [
-                            'text/javascript',
-                            js,
-                            du.deref()
-                        ]);
+                        module.toDataURI('text/javascript', js, du.deref());
                     }
                 ]);
             };
             chr.addConstraintListener(modAddScript$1, [new Var()], addScript => {
                 let varrefs0 = [];
-                let js = addScript.args[0];
+                let js = addScript._$0;
                 if (Constraint.allAlive([addScript])) {
                     chr.remove(addScript);
-                    body(js);
+                    _body(js);
                 }
             });
         })();
         (() => {
-            let body = (obj, res, mime) => {
+            let _body = (obj, res, mime) => {
                 var encoded;
                 chr.cont([
                     () => {
@@ -114,14 +118,14 @@
                 new Var()
             ], toDataURI => {
                 let varrefs0 = [];
-                let res = toDataURI.args[2];
+                let res = toDataURI._$2;
                 Var.all([
-                    toDataURI.args[0],
-                    toDataURI.args[1]
+                    toDataURI._$0,
+                    toDataURI._$1
                 ]).waitApply((mime, obj) => {
                     if (Constraint.allAlive([toDataURI])) {
                         chr.remove(toDataURI);
-                        body(obj, res, mime);
+                        _body(obj, res, mime);
                     }
                 });
             });
@@ -130,14 +134,11 @@
             let guard = n => {
                 return n.constructor === String;
             };
-            let body = (n, ht) => {
+            let _body = (n, ht) => {
                 var e;
                 chr.cont([
                     () => {
-                        chr.add(modOnhoverText, [
-                            e,
-                            ht
-                        ]);
+                        module.onhoverText(e, ht);
                     },
                     () => {
                         e = document.getElementById(n);
@@ -149,19 +150,19 @@
                 new Var()
             ], onhoverText => {
                 let varrefs0 = [];
-                let ht = onhoverText.args[1];
-                Var.wait(onhoverText.args[0], n => {
+                let ht = onhoverText._$1;
+                Var.wait(onhoverText._$0, n => {
                     if (Constraint.allAlive([onhoverText])) {
                         if (guard(n)) {
                             chr.remove(onhoverText);
-                            body(n, ht);
+                            _body(n, ht);
                         }
                     }
                 });
             });
         })();
         (() => {
-            let body = (e, ht) => {
+            let _body = (e, ht) => {
                 var prev;
                 chr.cont([
                     () => {
@@ -186,12 +187,12 @@
             ], onhoverText => {
                 let varrefs0 = [];
                 Var.all([
-                    onhoverText.args[0],
-                    onhoverText.args[1]
+                    onhoverText._$0,
+                    onhoverText._$1
                 ]).waitApply((e, ht) => {
                     if (Constraint.allAlive([onhoverText])) {
                         chr.remove(onhoverText);
-                        body(e, ht);
+                        _body(e, ht);
                     }
                 });
             });
@@ -200,11 +201,11 @@
             let guard = p => {
                 return p.constructor === String;
             };
-            let body = p => {
+            let _body = p => {
                 var o;
                 chr.cont([
                     () => {
-                        chr.add(modRemoveChildren, [o]);
+                        module.removeChildren(o);
                     },
                     () => {
                         o = document.getElementById(p);
@@ -213,11 +214,11 @@
             };
             chr.addConstraintListener(modRemoveChildren$1, [new Var()], removeChildren => {
                 let varrefs0 = [];
-                Var.wait(removeChildren.args[0], p => {
+                Var.wait(removeChildren._$0, p => {
                     if (Constraint.allAlive([removeChildren])) {
                         if (guard(p)) {
                             chr.remove(removeChildren);
-                            body(p);
+                            _body(p);
                         }
                     }
                 });
@@ -227,10 +228,10 @@
             let guard = p => {
                 return p.hasChildNodes();
             };
-            let body = p => {
+            let _body = p => {
                 chr.cont([
                     () => {
-                        chr.add(modRemoveChildren, [p]);
+                        module.removeChildren(p);
                     },
                     () => {
                         p.removeChild(p.lastChild);
@@ -239,11 +240,11 @@
             };
             chr.addConstraintListener(modRemoveChildren$1, [new Var()], removeChildren => {
                 let varrefs0 = [];
-                Var.wait(removeChildren.args[0], p => {
+                Var.wait(removeChildren._$0, p => {
                     if (Constraint.allAlive([removeChildren])) {
                         if (guard(p)) {
                             chr.remove(removeChildren);
-                            body(p);
+                            _body(p);
                         }
                     }
                 });
@@ -252,7 +253,6 @@
         (() => {
             chr.addConstraintListener(modRemoveChildren$1, [new Var()], removeChildren => {
                 let varrefs0 = [];
-                let _ = removeChildren.args[0];
                 if (Constraint.allAlive([removeChildren])) {
                     chr.remove(removeChildren);
                 }
@@ -262,11 +262,11 @@
             let guard = p => {
                 return p.constructor === String;
             };
-            let body = p => {
+            let _body = p => {
                 var o;
                 chr.cont([
                     () => {
-                        chr.add(modRemoveOptions, [o]);
+                        module.removeOptions(o);
                     },
                     () => {
                         o = document.getElementById(p);
@@ -275,11 +275,11 @@
             };
             chr.addConstraintListener(modRemoveOptions$1, [new Var()], removeOptions => {
                 let varrefs0 = [];
-                Var.wait(removeOptions.args[0], p => {
+                Var.wait(removeOptions._$0, p => {
                     if (Constraint.allAlive([removeOptions])) {
                         if (guard(p)) {
                             chr.remove(removeOptions);
-                            body(p);
+                            _body(p);
                         }
                     }
                 });
@@ -289,10 +289,10 @@
             let guard = p => {
                 return p.length > 0;
             };
-            let body = p => {
+            let _body = p => {
                 chr.cont([
                     () => {
-                        chr.add(modRemoveOptions, [p]);
+                        module.removeOptions(p);
                     },
                     () => {
                         p[0].remove();
@@ -301,11 +301,11 @@
             };
             chr.addConstraintListener(modRemoveOptions$1, [new Var()], removeOptions => {
                 let varrefs0 = [];
-                Var.wait(removeOptions.args[0], p => {
+                Var.wait(removeOptions._$0, p => {
                     if (Constraint.allAlive([removeOptions])) {
                         if (guard(p)) {
                             chr.remove(removeOptions);
-                            body(p);
+                            _body(p);
                         }
                     }
                 });
@@ -314,7 +314,6 @@
         (() => {
             chr.addConstraintListener(modRemoveOptions$1, [new Var()], removeOptions => {
                 let varrefs0 = [];
-                let _ = removeOptions.args[0];
                 if (Constraint.allAlive([removeOptions])) {
                     chr.remove(removeOptions);
                 }
@@ -324,14 +323,11 @@
             let guard = n => {
                 return n.constructor === String;
             };
-            let body = (n, t) => {
+            let _body = (n, t) => {
                 var r;
                 chr.cont([
                     () => {
-                        chr.add(modGetText, [
-                            r,
-                            t
-                        ]);
+                        module.getText(r, t);
                     },
                     () => {
                         r = document.getElementById(n);
@@ -343,19 +339,19 @@
                 new Var()
             ], getText => {
                 let varrefs0 = [];
-                let t = getText.args[1];
-                Var.wait(getText.args[0], n => {
+                let t = getText._$1;
+                Var.wait(getText._$0, n => {
                     if (Constraint.allAlive([getText])) {
                         if (guard(n)) {
                             chr.remove(getText);
-                            body(n, t);
+                            _body(n, t);
                         }
                     }
                 });
             });
         })();
         (() => {
-            let body = (t, e) => {
+            let _body = (t, e) => {
                 chr.cont(() => {
                     Utils.assign(t, e.innerText);
                 });
@@ -365,11 +361,11 @@
                 new Var()
             ], getText => {
                 let varrefs0 = [];
-                let t = getText.args[1];
-                Var.wait(getText.args[0], e => {
+                let t = getText._$1;
+                Var.wait(getText._$0, e => {
                     if (Constraint.allAlive([getText])) {
                         chr.remove(getText);
-                        body(t, e);
+                        _body(t, e);
                     }
                 });
             });
@@ -378,14 +374,11 @@
             let guard = n => {
                 return n.constructor === String;
             };
-            let body = (n, t) => {
+            let _body = (n, t) => {
                 var r;
                 chr.cont([
                     () => {
-                        chr.add(modSetText, [
-                            r,
-                            t
-                        ]);
+                        module.setText(r, t);
                     },
                     () => {
                         r = document.getElementById(n);
@@ -397,19 +390,19 @@
                 new Var()
             ], setText => {
                 let varrefs0 = [];
-                let t = setText.args[1];
-                Var.wait(setText.args[0], n => {
+                let t = setText._$1;
+                Var.wait(setText._$0, n => {
                     if (Constraint.allAlive([setText])) {
                         if (guard(n)) {
                             chr.remove(setText);
-                            body(n, t);
+                            _body(n, t);
                         }
                     }
                 });
             });
         })();
         (() => {
-            let body = (e, t) => {
+            let _body = (e, t) => {
                 chr.cont(() => {
                     e.innerText = t;
                 });
@@ -419,11 +412,11 @@
                 new Var()
             ], setText => {
                 let varrefs0 = [];
-                let e = setText.args[0];
-                Var.wait(setText.args[1], t => {
+                let e = setText._$0;
+                Var.wait(setText._$1, t => {
                     if (Constraint.allAlive([setText])) {
                         chr.remove(setText);
-                        body(e, t);
+                        _body(e, t);
                     }
                 });
             });
@@ -432,7 +425,6 @@
             chr.addConstraintListener(modCompiled$1, [new Var()], compiled => {
                 if (chr.has(modCompile$0, 1)) {
                     let varrefs0 = [];
-                    let _ = compiled.args[0];
                     chr.select(modCompile$0, { 'check': Constraint.alive }, compile => {
                         let varrefs1 = varrefs0.slice();
                         let $cont = true;
@@ -452,7 +444,6 @@
                     let varrefs0 = [];
                     chr.select(modCompiled$1, { 'check': Constraint.alive }, compiled => {
                         let varrefs1 = varrefs0.slice();
-                        let _ = compiled.args[0];
                         if (Constraint.allAlive([
                                 compile,
                                 compiled
@@ -465,11 +456,11 @@
             });
         })();
         (() => {
-            let body = e => {
+            let _body = e => {
                 var js, jsOut;
                 chr.cont([
                     () => {
-                        chr.add(modCompiled, [jsOut]);
+                        module.compiled(jsOut);
                     },
                     () => {
                         jsOut = Compiler.parseCompileGenerate(js);
@@ -491,15 +482,15 @@
                     }, editor => {
                         let varrefs1 = varrefs0.slice();
                         let $cont = true;
-                        Match.match(editor.args[0], 'editor', varrefs1).wait(_ => {
-                            Var.wait(editor.args[1], e => {
+                        Match.match(editor._$0, 'editor', varrefs1).wait(_ => {
+                            Var.wait(editor._$1, e => {
                                 if (Constraint.allAlive([
                                         editor,
                                         compile
                                     ])) {
                                     chr.remove(compile);
                                     $cont = false;
-                                    body(e);
+                                    _body(e);
                                 }
                             });
                         });
@@ -513,8 +504,8 @@
             ], editor => {
                 if (chr.has(modCompile$0, 1)) {
                     let varrefs0 = [];
-                    Var.wait(editor.args[1], e => {
-                        Match.match(editor.args[0], 'editor', varrefs0).wait(_ => {
+                    Var.wait(editor._$1, e => {
+                        Match.match(editor._$0, 'editor', varrefs0).wait(_ => {
                             chr.select(modCompile$0, { 'check': Constraint.alive }, compile => {
                                 let varrefs1 = varrefs0.slice();
                                 if (Constraint.allAlive([
@@ -522,7 +513,7 @@
                                         compile
                                     ])) {
                                     chr.remove(compile);
-                                    body(e);
+                                    _body(e);
                                 }
                                 return true;
                             });
@@ -532,57 +523,42 @@
             });
         })();
         (() => {
-            let body = jsOut => {
+            let _body = jsOut => {
                 chr.cont([
                     () => {
-                        chr.add(modClearSelection, ['editorOut']);
+                        module.clearSelection('editorOut');
                     },
                     () => {
-                        chr.add(modSetEditorValue, [
-                            'editorOut',
-                            jsOut
-                        ]);
+                        module.setEditorValue('editorOut', jsOut);
                     },
                     () => {
-                        chr.add(modSetDisabled, [
-                            'inject',
-                            false
-                        ]);
+                        module.setDisabled('inject', false);
                     },
                     () => {
-                        chr.add(modSetText, [
-                            'compile',
-                            'Compiled'
-                        ]);
+                        module.setText('compile', 'Compiled');
                     }
                 ]);
             };
             chr.addConstraintListener(modCompiled$1, [new Var()], compiled => {
                 let varrefs0 = [];
-                let jsOut = compiled.args[0];
+                let jsOut = compiled._$0;
                 if (Constraint.allAlive([compiled])) {
-                    body(jsOut);
+                    _body(jsOut);
                 }
             });
         })();
         (() => {
-            let body = e => {
+            let _body = e => {
                 var js;
                 chr.cont([
                     () => {
-                        chr.add(modSetDisabled, [
-                            'exec',
-                            false
-                        ]);
+                        module.setDisabled('exec', false);
                     },
                     () => {
-                        chr.add(modSetText, [
-                            'inject',
-                            'Injected'
-                        ]);
+                        module.setText('inject', 'Injected');
                     },
                     () => {
-                        chr.add(modAddScript, [js]);
+                        module.addScript(js);
                     },
                     () => {
                         js = e.getValue();
@@ -601,15 +577,15 @@
                     }, editor => {
                         let varrefs1 = varrefs0.slice();
                         let $cont = true;
-                        Match.match(editor.args[0], 'editorOut', varrefs1).wait(_ => {
-                            Var.wait(editor.args[1], e => {
+                        Match.match(editor._$0, 'editorOut', varrefs1).wait(_ => {
+                            Var.wait(editor._$1, e => {
                                 if (Constraint.allAlive([
                                         editor,
                                         inject
                                     ])) {
                                     chr.remove(inject);
                                     $cont = false;
-                                    body(e);
+                                    _body(e);
                                 }
                             });
                         });
@@ -623,8 +599,8 @@
             ], editor => {
                 if (chr.has(modInject$0, 1)) {
                     let varrefs0 = [];
-                    Var.wait(editor.args[1], e => {
-                        Match.match(editor.args[0], 'editorOut', varrefs0).wait(_ => {
+                    Var.wait(editor._$1, e => {
+                        Match.match(editor._$0, 'editorOut', varrefs0).wait(_ => {
                             chr.select(modInject$0, { 'check': Constraint.alive }, inject => {
                                 let varrefs1 = varrefs0.slice();
                                 if (Constraint.allAlive([
@@ -632,7 +608,7 @@
                                         inject
                                     ])) {
                                     chr.remove(inject);
-                                    body(e);
+                                    _body(e);
                                 }
                                 return true;
                             });
@@ -642,26 +618,20 @@
             });
         })();
         (() => {
-            let body = e => {
+            let _body = e => {
                 var js;
                 chr.cont([
                     () => {
-                        chr.add(modSetDisabled, [
-                            'clearOutput',
-                            false
-                        ]);
+                        module.setDisabled('clearOutput', false);
                     },
                     () => {
-                        chr.add(modSetDisplay, ['outputblock']);
+                        module.setDisplay('outputblock');
                     },
                     () => {
-                        chr.add(modSetText, [
-                            'exec',
-                            'Executed'
-                        ]);
+                        module.setText('exec', 'Executed');
                     },
                     () => {
-                        chr.add(modAddScript, [js]);
+                        module.addScript(js);
                     },
                     () => {
                         js = e.getValue();
@@ -680,15 +650,15 @@
                     }, editor => {
                         let varrefs1 = varrefs0.slice();
                         let $cont = true;
-                        Match.match(editor.args[0], 'editorExec', varrefs1).wait(_ => {
-                            Var.wait(editor.args[1], e => {
+                        Match.match(editor._$0, 'editorExec', varrefs1).wait(_ => {
+                            Var.wait(editor._$1, e => {
                                 if (Constraint.allAlive([
                                         editor,
                                         exec
                                     ])) {
                                     chr.remove(exec);
                                     $cont = false;
-                                    body(e);
+                                    _body(e);
                                 }
                             });
                         });
@@ -702,8 +672,8 @@
             ], editor => {
                 if (chr.has(modExec$0, 1)) {
                     let varrefs0 = [];
-                    Var.wait(editor.args[1], e => {
-                        Match.match(editor.args[0], 'editorExec', varrefs0).wait(_ => {
+                    Var.wait(editor._$1, e => {
+                        Match.match(editor._$0, 'editorExec', varrefs0).wait(_ => {
                             chr.select(modExec$0, { 'check': Constraint.alive }, exec => {
                                 let varrefs1 = varrefs0.slice();
                                 if (Constraint.allAlive([
@@ -711,7 +681,7 @@
                                         exec
                                     ])) {
                                     chr.remove(exec);
-                                    body(e);
+                                    _body(e);
                                 }
                                 return true;
                             });
@@ -721,25 +691,19 @@
             });
         })();
         (() => {
-            let body = () => {
+            let _body = () => {
                 chr.cont([
                     () => {
-                        chr.add(modSetText, [
-                            'exec',
-                            'Execute'
-                        ]);
+                        module.setText('exec', 'Execute');
                     },
                     () => {
-                        chr.add(modSetText, [
-                            'outputContainer',
-                            ''
-                        ]);
+                        module.setText('outputContainer', '');
                     },
                     () => {
-                        chr.add(modSetDisabled, ['clearOutput']);
+                        module.setDisabled('clearOutput');
                     },
                     () => {
-                        chr.add(modRemoveChildren, ['outputContainer']);
+                        module.removeChildren('outputContainer');
                     }
                 ]);
             };
@@ -747,7 +711,7 @@
                 let varrefs0 = [];
                 if (Constraint.allAlive([clear])) {
                     chr.remove(clear);
-                    body();
+                    _body();
                 }
             });
         })();
@@ -755,14 +719,11 @@
             let guard = n => {
                 return n.constructor === String;
             };
-            let body = (n, f) => {
+            let _body = (n, f) => {
                 var e;
                 chr.cont([
                     () => {
-                        chr.add(modOnclick, [
-                            e,
-                            f
-                        ]);
+                        module.onclick(e, f);
                     },
                     () => {
                         e = document.getElementById(n);
@@ -774,19 +735,19 @@
                 new Var()
             ], onclick => {
                 let varrefs0 = [];
-                let f = onclick.args[1];
-                Var.wait(onclick.args[0], n => {
+                let f = onclick._$1;
+                Var.wait(onclick._$0, n => {
                     if (Constraint.allAlive([onclick])) {
                         if (guard(n)) {
                             chr.remove(onclick);
-                            body(n, f);
+                            _body(n, f);
                         }
                     }
                 });
             });
         })();
         (() => {
-            let body = (e, f) => {
+            let _body = (e, f) => {
                 chr.cont(() => {
                     e.onclick = f;
                 });
@@ -796,11 +757,11 @@
                 new Var()
             ], onclick => {
                 let varrefs0 = [];
-                let e = onclick.args[0];
-                Var.wait(onclick.args[1], f => {
+                let e = onclick._$0;
+                Var.wait(onclick._$1, f => {
                     if (Constraint.allAlive([onclick])) {
                         chr.remove(onclick);
-                        body(e, f);
+                        _body(e, f);
                     }
                 });
             });
@@ -814,11 +775,11 @@
             ], playground2 => {
                 if (chr.has(modPlayground$3, 2)) {
                     let varrefs0 = [];
-                    let name = playground2.args[0];
-                    let code2 = playground2.args[1];
-                    let testcode2 = playground2.args[2];
+                    let name = playground2._$0;
+                    let code2 = playground2._$1;
+                    let testcode2 = playground2._$2;
                     let excl = {};
-                    excl[playground2.id] = true;
+                    excl[playground2[Constraint.idSym]] = true;
                     chr.select(modPlayground$3, {
                         'check': Constraint.alive,
                         'index': [{
@@ -828,9 +789,9 @@
                     }, excl, playground1 => {
                         let varrefs1 = varrefs0.slice();
                         let $cont = true;
-                        let code1 = playground1.args[1];
-                        let testcode1 = playground1.args[2];
-                        Match.match(name, playground1.args[0], varrefs1).wait(name => {
+                        let code1 = playground1._$1;
+                        let testcode1 = playground1._$2;
+                        Match.match(name, playground1._$0, varrefs1).wait(name => {
                             if (Constraint.allAlive([
                                     playground1,
                                     playground2
@@ -850,11 +811,11 @@
             ], playground1 => {
                 if (chr.has(modPlayground$3, 2)) {
                     let varrefs0 = [];
-                    let name = playground1.args[0];
-                    let code1 = playground1.args[1];
-                    let testcode1 = playground1.args[2];
+                    let name = playground1._$0;
+                    let code1 = playground1._$1;
+                    let testcode1 = playground1._$2;
                     let excl = {};
-                    excl[playground1.id] = true;
+                    excl[playground1[Constraint.idSym]] = true;
                     chr.select(modPlayground$3, {
                         'check': Constraint.alive,
                         'index': [{
@@ -863,9 +824,9 @@
                             }]
                     }, excl, playground2 => {
                         let varrefs1 = varrefs0.slice();
-                        let code2 = playground2.args[1];
-                        let testcode2 = playground2.args[2];
-                        Match.match(name, playground2.args[0], varrefs1).wait(name => {
+                        let code2 = playground2._$1;
+                        let testcode2 = playground2._$2;
+                        Match.match(name, playground2._$0, varrefs1).wait(name => {
                             if (Constraint.allAlive([
                                     playground1,
                                     playground2
@@ -879,7 +840,7 @@
             });
         })();
         (() => {
-            let body = name => {
+            let _body = name => {
                 var opt;
                 chr.cont([
                     () => {
@@ -908,35 +869,32 @@
                 new Var()
             ], playground => {
                 let varrefs0 = [];
-                let code = playground.args[1];
-                let testcode = playground.args[2];
-                Var.wait(playground.args[0], name => {
+                let code = playground._$1;
+                let testcode = playground._$2;
+                Var.wait(playground._$0, name => {
                     if (Constraint.allAlive([playground])) {
-                        body(name);
+                        _body(name);
                     }
                 });
             });
         })();
         (() => {
-            let body = id => {
+            let _body = id => {
                 chr.cont(() => {
-                    chr.add(modSetDisabled, [
-                        id,
-                        true
-                    ]);
+                    module.setDisabled(id, true);
                 });
             };
             chr.addConstraintListener(modSetDisabled$1, [new Var()], setDisabled => {
                 let varrefs0 = [];
-                let id = setDisabled.args[0];
+                let id = setDisabled._$0;
                 if (Constraint.allAlive([setDisabled])) {
                     chr.remove(setDisabled);
-                    body(id);
+                    _body(id);
                 }
             });
         })();
         (() => {
-            let body = (id, state) => {
+            let _body = (id, state) => {
                 var e;
                 chr.cont([
                     () => {
@@ -953,36 +911,33 @@
             ], setDisabled => {
                 let varrefs0 = [];
                 Var.all([
-                    setDisabled.args[0],
-                    setDisabled.args[1]
+                    setDisabled._$0,
+                    setDisabled._$1
                 ]).waitApply((id, state) => {
                     if (Constraint.allAlive([setDisabled])) {
                         chr.remove(setDisabled);
-                        body(id, state);
+                        _body(id, state);
                     }
                 });
             });
         })();
         (() => {
-            let body = id => {
+            let _body = id => {
                 chr.cont(() => {
-                    chr.add(modSetDisplay, [
-                        id,
-                        true
-                    ]);
+                    module.setDisplay(id, true);
                 });
             };
             chr.addConstraintListener(modSetDisplay$1, [new Var()], setDisplay => {
                 let varrefs0 = [];
-                let id = setDisplay.args[0];
+                let id = setDisplay._$0;
                 if (Constraint.allAlive([setDisplay])) {
                     chr.remove(setDisplay);
-                    body(id);
+                    _body(id);
                 }
             });
         })();
         (() => {
-            let body = (id, state) => {
+            let _body = (id, state) => {
                 var e;
                 chr.cont([
                     () => {
@@ -999,12 +954,12 @@
             ], setDisplay => {
                 let varrefs0 = [];
                 Var.all([
-                    setDisplay.args[0],
-                    setDisplay.args[1]
+                    setDisplay._$0,
+                    setDisplay._$1
                 ]).waitApply((id, state) => {
                     if (Constraint.allAlive([setDisplay])) {
                         chr.remove(setDisplay);
-                        body(id, state);
+                        _body(id, state);
                     }
                 });
             });
@@ -1013,18 +968,18 @@
             let guard = i => {
                 return i.constructor === Number && i < 0;
             };
-            let body = i => {
+            let _body = i => {
                 chr.cont(() => {
-                    chr.add(modSelect, [sel.length + i]);
+                    module.select(sel.length + i);
                 });
             };
             chr.addConstraintListener(modSelect$1, [new Var()], select => {
                 let varrefs0 = [];
-                Var.wait(select.args[0], i => {
+                Var.wait(select._$0, i => {
                     if (Constraint.allAlive([select])) {
                         if (guard(i)) {
                             chr.remove(select);
-                            body(i);
+                            _body(i);
                         }
                     }
                 });
@@ -1034,64 +989,52 @@
             let guard = i => {
                 return i.constructor === Number && i >= 0 && i < sel.length;
             };
-            let body = i => {
+            let _body = i => {
                 chr.cont(() => {
-                    chr.add(modSelect, [sel[i].value]);
+                    module.select(sel[i].value);
                 });
             };
             chr.addConstraintListener(modSelect$1, [new Var()], select => {
                 let varrefs0 = [];
-                Var.wait(select.args[0], i => {
+                Var.wait(select._$0, i => {
                     if (Constraint.allAlive([select])) {
                         if (guard(i)) {
                             chr.remove(select);
-                            body(i);
+                            _body(i);
                         }
                     }
                 });
             });
         })();
         (() => {
-            let body = (name, code, testcode) => {
+            let _body = (name, code, testcode) => {
                 chr.cont([
                     () => {
-                        chr.add(modSetDisabled, ['clearOutput']);
+                        module.setDisabled('clearOutput');
                     },
                     () => {
-                        chr.add(modSetDisabled, ['exec']);
+                        module.setDisabled('exec');
                     },
                     () => {
-                        chr.add(modSetDisabled, [
-                            'inject',
-                            true
-                        ]);
+                        module.setDisabled('inject', true);
                     },
                     () => {
-                        chr.add(modClearSelection, ['editorExec']);
+                        module.clearSelection('editorExec');
                     },
                     () => {
-                        chr.add(modSetEditorValue, [
-                            'editorExec',
-                            testcode
-                        ]);
+                        module.setEditorValue('editorExec', testcode);
                     },
                     () => {
-                        chr.add(modClearSelection, ['editorOut']);
+                        module.clearSelection('editorOut');
                     },
                     () => {
-                        chr.add(modSetEditorValue, [
-                            'editorOut',
-                            ''
-                        ]);
+                        module.setEditorValue('editorOut', '');
                     },
                     () => {
-                        chr.add(modClearSelection, ['editor']);
+                        module.clearSelection('editor');
                     },
                     () => {
-                        chr.add(modSetEditorValue, [
-                            'editor',
-                            code
-                        ]);
+                        module.setEditorValue('editor', code);
                     },
                     () => {
                         console.log(name);
@@ -1101,7 +1044,7 @@
             chr.addConstraintListener(modSelect$1, [new Var()], select => {
                 if (chr.has(modPlayground$3, 1)) {
                     let varrefs0 = [];
-                    let name = select.args[0];
+                    let name = select._$0;
                     chr.select(modPlayground$3, {
                         'check': Constraint.alive,
                         'index': [{
@@ -1111,16 +1054,16 @@
                     }, playground => {
                         let varrefs1 = varrefs0.slice();
                         let $cont = true;
-                        let code = playground.args[1];
-                        let testcode = playground.args[2];
-                        Match.match(name, playground.args[0], varrefs1).wait(name => {
+                        let code = playground._$1;
+                        let testcode = playground._$2;
+                        Match.match(name, playground._$0, varrefs1).wait(name => {
                             if (Constraint.allAlive([
                                     playground,
                                     select
                                 ])) {
                                 chr.remove(select);
                                 $cont = false;
-                                body(name, code, testcode);
+                                _body(name, code, testcode);
                             }
                         });
                         return $cont;
@@ -1134,9 +1077,9 @@
             ], playground => {
                 if (chr.has(modSelect$1, 1)) {
                     let varrefs0 = [];
-                    let name = playground.args[0];
-                    let code = playground.args[1];
-                    let testcode = playground.args[2];
+                    let name = playground._$0;
+                    let code = playground._$1;
+                    let testcode = playground._$2;
                     chr.select(modSelect$1, {
                         'check': Constraint.alive,
                         'index': [{
@@ -1145,13 +1088,13 @@
                             }]
                     }, select => {
                         let varrefs1 = varrefs0.slice();
-                        Match.match(name, select.args[0], varrefs1).wait(name => {
+                        Match.match(name, select._$0, varrefs1).wait(name => {
                             if (Constraint.allAlive([
                                     playground,
                                     select
                                 ])) {
                                 chr.remove(select);
-                                body(name, code, testcode);
+                                _body(name, code, testcode);
                             }
                         });
                         return true;
@@ -1160,29 +1103,29 @@
             });
         })();
         (() => {
-            let body = t => {
+            let _body = t => {
                 chr.cont(() => {
                     Utils.assign(t, performance.now());
                 });
             };
             chr.addConstraintListener(modTimestamp$1, [new Var()], timestamp => {
                 let varrefs0 = [];
-                let t = timestamp.args[0];
+                let t = timestamp._$0;
                 if (Constraint.allAlive([timestamp])) {
                     chr.remove(timestamp);
-                    body(t);
+                    _body(t);
                 }
             });
         })();
         (() => {
-            let body = () => {
+            let _body = () => {
                 var t = new Var();
                 chr.cont([
                     () => {
                         console.log(t.deref());
                     },
                     () => {
-                        chr.add(modTimestamp, [t.deref()]);
+                        module.timestamp(t.deref());
                     }
                 ]);
             };
@@ -1190,12 +1133,12 @@
                 let varrefs0 = [];
                 if (Constraint.allAlive([time])) {
                     chr.remove(time);
-                    body();
+                    _body();
                 }
             });
         })();
         (() => {
-            let body = (e, v) => {
+            let _body = (e, v) => {
                 chr.cont(() => {
                     e.setValue(v);
                 });
@@ -1206,8 +1149,8 @@
             ], setEditorValue => {
                 if (chr.has(modEditor$2, 1)) {
                     let varrefs0 = [];
-                    let elem = setEditorValue.args[0];
-                    let v = setEditorValue.args[1];
+                    let elem = setEditorValue._$0;
+                    let v = setEditorValue._$1;
                     chr.select(modEditor$2, {
                         'check': Constraint.alive,
                         'index': [{
@@ -1217,15 +1160,15 @@
                     }, editor => {
                         let varrefs1 = varrefs0.slice();
                         let $cont = true;
-                        let e = editor.args[1];
-                        Match.match(elem, editor.args[0], varrefs1).wait(elem => {
+                        let e = editor._$1;
+                        Match.match(elem, editor._$0, varrefs1).wait(elem => {
                             if (Constraint.allAlive([
                                     editor,
                                     setEditorValue
                                 ])) {
                                 chr.remove(setEditorValue);
                                 $cont = false;
-                                body(e, v);
+                                _body(e, v);
                             }
                         });
                         return $cont;
@@ -1238,8 +1181,8 @@
             ], editor => {
                 if (chr.has(modSetEditorValue$2, 1)) {
                     let varrefs0 = [];
-                    let elem = editor.args[0];
-                    let e = editor.args[1];
+                    let elem = editor._$0;
+                    let e = editor._$1;
                     chr.select(modSetEditorValue$2, {
                         'check': Constraint.alive,
                         'index': [{
@@ -1248,14 +1191,14 @@
                             }]
                     }, setEditorValue => {
                         let varrefs1 = varrefs0.slice();
-                        let v = setEditorValue.args[1];
-                        Match.match(elem, setEditorValue.args[0], varrefs1).wait(elem => {
+                        let v = setEditorValue._$1;
+                        Match.match(elem, setEditorValue._$0, varrefs1).wait(elem => {
                             if (Constraint.allAlive([
                                     editor,
                                     setEditorValue
                                 ])) {
                                 chr.remove(setEditorValue);
-                                body(e, v);
+                                _body(e, v);
                             }
                         });
                         return true;
@@ -1264,7 +1207,7 @@
             });
         })();
         (() => {
-            let body = e => {
+            let _body = e => {
                 chr.cont(() => {
                     e.clearSelection();
                 });
@@ -1272,7 +1215,7 @@
             chr.addConstraintListener(modClearSelection$1, [new Var()], clearSelection => {
                 if (chr.has(modEditor$2, 1)) {
                     let varrefs0 = [];
-                    let elem = clearSelection.args[0];
+                    let elem = clearSelection._$0;
                     chr.select(modEditor$2, {
                         'check': Constraint.alive,
                         'index': [{
@@ -1282,15 +1225,15 @@
                     }, editor => {
                         let varrefs1 = varrefs0.slice();
                         let $cont = true;
-                        let e = editor.args[1];
-                        Match.match(elem, editor.args[0], varrefs1).wait(elem => {
+                        let e = editor._$1;
+                        Match.match(elem, editor._$0, varrefs1).wait(elem => {
                             if (Constraint.allAlive([
                                     editor,
                                     clearSelection
                                 ])) {
                                 chr.remove(clearSelection);
                                 $cont = false;
-                                body(e);
+                                _body(e);
                             }
                         });
                         return $cont;
@@ -1303,8 +1246,8 @@
             ], editor => {
                 if (chr.has(modClearSelection$1, 1)) {
                     let varrefs0 = [];
-                    let elem = editor.args[0];
-                    let e = editor.args[1];
+                    let elem = editor._$0;
+                    let e = editor._$1;
                     chr.select(modClearSelection$1, {
                         'check': Constraint.alive,
                         'index': [{
@@ -1313,13 +1256,13 @@
                             }]
                     }, clearSelection => {
                         let varrefs1 = varrefs0.slice();
-                        Match.match(elem, clearSelection.args[0], varrefs1).wait(elem => {
+                        Match.match(elem, clearSelection._$0, varrefs1).wait(elem => {
                             if (Constraint.allAlive([
                                     editor,
                                     clearSelection
                                 ])) {
                                 chr.remove(clearSelection);
-                                body(e);
+                                _body(e);
                             }
                         });
                         return true;
@@ -1328,14 +1271,11 @@
             });
         })();
         (() => {
-            let body = id => {
+            let _body = id => {
                 var e;
                 chr.cont([
                     () => {
-                        chr.add(modEditor, [
-                            id,
-                            e
-                        ]);
+                        module.editor(id, e);
                     },
                     () => {
                         e.getSession().setMode('ace/mode/javascript');
@@ -1350,16 +1290,16 @@
             };
             chr.addConstraintListener(modInitEditor$1, [new Var()], initEditor => {
                 let varrefs0 = [];
-                Var.wait(initEditor.args[0], id => {
+                Var.wait(initEditor._$0, id => {
                     if (Constraint.allAlive([initEditor])) {
                         chr.remove(initEditor);
-                        body(id);
+                        _body(id);
                     }
                 });
             });
         })();
         (() => {
-            let body = (e, f) => {
+            let _body = (e, f) => {
                 chr.cont(() => {
                     e.getSession().on('change', f);
                 });
@@ -1370,8 +1310,8 @@
             ], onEditorChange => {
                 if (chr.has(modEditor$2, 1)) {
                     let varrefs0 = [];
-                    let id = onEditorChange.args[0];
-                    let f = onEditorChange.args[1];
+                    let id = onEditorChange._$0;
+                    let f = onEditorChange._$1;
                     chr.select(modEditor$2, {
                         'check': Constraint.alive,
                         'index': [{
@@ -1381,15 +1321,15 @@
                     }, editor => {
                         let varrefs1 = varrefs0.slice();
                         let $cont = true;
-                        let e = editor.args[1];
-                        Match.match(id, editor.args[0], varrefs1).wait(id => {
+                        let e = editor._$1;
+                        Match.match(id, editor._$0, varrefs1).wait(id => {
                             if (Constraint.allAlive([
                                     editor,
                                     onEditorChange
                                 ])) {
                                 chr.remove(onEditorChange);
                                 $cont = false;
-                                body(e, f);
+                                _body(e, f);
                             }
                         });
                         return $cont;
@@ -1402,8 +1342,8 @@
             ], editor => {
                 if (chr.has(modOnEditorChange$2, 1)) {
                     let varrefs0 = [];
-                    let id = editor.args[0];
-                    let e = editor.args[1];
+                    let id = editor._$0;
+                    let e = editor._$1;
                     chr.select(modOnEditorChange$2, {
                         'check': Constraint.alive,
                         'index': [{
@@ -1412,14 +1352,14 @@
                             }]
                     }, onEditorChange => {
                         let varrefs1 = varrefs0.slice();
-                        let f = onEditorChange.args[1];
-                        Match.match(id, onEditorChange.args[0], varrefs1).wait(id => {
+                        let f = onEditorChange._$1;
+                        Match.match(id, onEditorChange._$0, varrefs1).wait(id => {
                             if (Constraint.allAlive([
                                     editor,
                                     onEditorChange
                                 ])) {
                                 chr.remove(onEditorChange);
-                                body(e, f);
+                                _body(e, f);
                             }
                         });
                         return true;
@@ -1456,7 +1396,7 @@
             return ns;
         };
         (() => {
-            let body = () => {
+            let _body = () => {
                 var ebs, e = new Var();
                 chr.cont([
                     () => {
@@ -1478,105 +1418,75 @@
                 let varrefs0 = [];
                 if (Constraint.allAlive([editorEnlarge])) {
                     chr.remove(editorEnlarge);
-                    body();
+                    _body();
                 }
             });
         })();
         (() => {
-            let body = codes => {
+            let _body = codes => {
                 var c = new Var();
                 chr.cont([
                     () => {
-                        chr.add(modTime, []);
+                        module.time();
                     },
                     () => {
-                        chr.add(modOnEditorChange, [
-                            'editorExec',
-                            () => {
-                                module.setText('exec', 'Execute');
-                            }
-                        ]);
+                        module.onEditorChange('editorExec', () => {
+                            module.setText('exec', 'Execute');
+                        });
                     },
                     () => {
-                        chr.add(modOnEditorChange, [
-                            'editorOut',
-                            () => {
-                                module.setText('inject', 'Inject');
-                            }
-                        ]);
+                        module.onEditorChange('editorOut', () => {
+                            module.setText('inject', 'Inject');
+                        });
                     },
                     () => {
-                        chr.add(modOnEditorChange, [
-                            'editor',
-                            () => {
-                                module.setText('compile', 'Compile');
-                            }
-                        ]);
+                        module.onEditorChange('editor', () => {
+                            module.setText('compile', 'Compile');
+                        });
                     },
                     () => {
-                        chr.add(modEditorEnlarge, []);
+                        module.editorEnlarge();
                     },
                     () => {
-                        chr.add(modInitEditor, ['editorExec']);
+                        module.initEditor('editorExec');
                     },
                     () => {
-                        chr.add(modInitEditor, ['editorOut']);
+                        module.initEditor('editorOut');
                     },
                     () => {
-                        chr.add(modInitEditor, ['editor']);
+                        module.initEditor('editor');
                     },
                     () => {
-                        chr.add(modOnhoverText, [
-                            'exec',
-                            'Execute'
-                        ]);
+                        module.onhoverText('exec', 'Execute');
                     },
                     () => {
-                        chr.add(modOnhoverText, [
-                            'inject',
-                            'Inject'
-                        ]);
+                        module.onhoverText('inject', 'Inject');
                     },
                     () => {
-                        chr.add(modOnhoverText, [
-                            'compile',
-                            'Compile'
-                        ]);
+                        module.onhoverText('compile', 'Compile');
                     },
                     () => {
-                        chr.add(modOnclick, [
-                            'clearOutput',
-                            () => {
-                                resolve.clear();
-                            }
-                        ]);
+                        module.onclick('clearOutput', () => {
+                            resolve.clear();
+                        });
                     },
                     () => {
-                        chr.add(modOnclick, [
-                            'exec',
-                            () => {
-                                resolve.exec();
-                            }
-                        ]);
+                        module.onclick('exec', () => {
+                            resolve.exec();
+                        });
                     },
                     () => {
-                        chr.add(modOnclick, [
-                            'inject',
-                            () => {
-                                resolve.inject();
-                            }
-                        ]);
+                        module.onclick('inject', () => {
+                            resolve.inject();
+                        });
                     },
                     () => {
-                        chr.add(modOnclick, [
-                            'compile',
-                            () => {
-                                resolve.compile();
-                            }
-                        ]);
+                        module.onclick('compile', () => {
+                            resolve.compile();
+                        });
                     },
                     () => {
-                        chr.add(modSelect, [0]);
+                        module.select(0);
                     },
                     () => {
                         sel.onchange = function () {
@@ -1589,108 +1499,110 @@
                         });
                     },
                     () => {
-                        chr.add(modRemoveOptions, ['codeselect']);
+                        module.removeOptions('codeselect');
                     }
                 ]);
             };
             chr.addConstraintListener(modInit$1, [new Var()], init => {
                 let varrefs0 = [];
-                let codes = init.args[0];
+                let codes = init._$0;
                 if (Constraint.allAlive([init])) {
                     chr.remove(init);
-                    body(codes);
+                    _body(codes);
                 }
             });
         })();
     };
-    let init = (chr, modbase, modname = 'Playground') => {
-        let mod;
-        if (modbase === undefined) {
+    let init = (chr, modname = 'Playground', base) => {
+        if (base === undefined) {
             chr.Modules = chr.Modules || {};
-            modbase = chr.Modules;
+            base = chr.Modules;
         }
-        modbase[modname] = modbase[modname] || {};
-        mod = modbase[modname];
+        base.module = base.module || {};
+        base.resolve = base.resolve || {};
+        base.module[modname] = base.module[modname] || {};
+        let mod = base.module[modname];
+        base.resolve[modname] = base.resolve[modname] || {};
+        let res = base.resolve[modname];
         let temp = {};
         temp.addScript = temp.addScript || function () {
-            chr.addConstraint(modname + '.addScript', arguments);
+            chr.add(modname + '.addScript', arguments);
         };
         temp.toDataURI = temp.toDataURI || function () {
-            chr.addConstraint(modname + '.toDataURI', arguments);
+            chr.add(modname + '.toDataURI', arguments);
         };
         temp.onhoverText = temp.onhoverText || function () {
-            chr.addConstraint(modname + '.onhoverText', arguments);
+            chr.add(modname + '.onhoverText', arguments);
         };
         temp.removeChildren = temp.removeChildren || function () {
-            chr.addConstraint(modname + '.removeChildren', arguments);
+            chr.add(modname + '.removeChildren', arguments);
         };
         temp.removeOptions = temp.removeOptions || function () {
-            chr.addConstraint(modname + '.removeOptions', arguments);
+            chr.add(modname + '.removeOptions', arguments);
         };
         temp.getText = temp.getText || function () {
-            chr.addConstraint(modname + '.getText', arguments);
+            chr.add(modname + '.getText', arguments);
         };
         temp.setText = temp.setText || function () {
-            chr.addConstraint(modname + '.setText', arguments);
+            chr.add(modname + '.setText', arguments);
         };
         temp.compile = temp.compile || function () {
-            chr.addConstraint(modname + '.compile', arguments);
+            chr.add(modname + '.compile', arguments);
         };
         temp.compiled = temp.compiled || function () {
-            chr.addConstraint(modname + '.compiled', arguments);
+            chr.add(modname + '.compiled', arguments);
         };
         temp.editor = temp.editor || function () {
-            chr.addConstraint(modname + '.editor', arguments);
+            chr.add(modname + '.editor', arguments);
         };
         temp.setDisabled = temp.setDisabled || function () {
-            chr.addConstraint(modname + '.setDisabled', arguments);
+            chr.add(modname + '.setDisabled', arguments);
         };
         temp.setEditorValue = temp.setEditorValue || function () {
-            chr.addConstraint(modname + '.setEditorValue', arguments);
+            chr.add(modname + '.setEditorValue', arguments);
         };
         temp.clearSelection = temp.clearSelection || function () {
-            chr.addConstraint(modname + '.clearSelection', arguments);
+            chr.add(modname + '.clearSelection', arguments);
         };
         temp.inject = temp.inject || function () {
-            chr.addConstraint(modname + '.inject', arguments);
+            chr.add(modname + '.inject', arguments);
         };
         temp.exec = temp.exec || function () {
-            chr.addConstraint(modname + '.exec', arguments);
+            chr.add(modname + '.exec', arguments);
         };
         temp.setDisplay = temp.setDisplay || function () {
-            chr.addConstraint(modname + '.setDisplay', arguments);
+            chr.add(modname + '.setDisplay', arguments);
         };
         temp.clear = temp.clear || function () {
-            chr.addConstraint(modname + '.clear', arguments);
+            chr.add(modname + '.clear', arguments);
         };
         temp.onclick = temp.onclick || function () {
-            chr.addConstraint(modname + '.onclick', arguments);
+            chr.add(modname + '.onclick', arguments);
         };
         temp.playground = temp.playground || function () {
-            chr.addConstraint(modname + '.playground', arguments);
+            chr.add(modname + '.playground', arguments);
         };
         temp.select = temp.select || function () {
-            chr.addConstraint(modname + '.select', arguments);
+            chr.add(modname + '.select', arguments);
         };
         temp.timestamp = temp.timestamp || function () {
-            chr.addConstraint(modname + '.timestamp', arguments);
+            chr.add(modname + '.timestamp', arguments);
         };
         temp.time = temp.time || function () {
-            chr.addConstraint(modname + '.time', arguments);
+            chr.add(modname + '.time', arguments);
         };
         temp.initEditor = temp.initEditor || function () {
-            chr.addConstraint(modname + '.initEditor', arguments);
+            chr.add(modname + '.initEditor', arguments);
         };
         temp.onEditorChange = temp.onEditorChange || function () {
-            chr.addConstraint(modname + '.onEditorChange', arguments);
+            chr.add(modname + '.onEditorChange', arguments);
         };
         temp.editorEnlarge = temp.editorEnlarge || function () {
-            chr.addConstraint(modname + '.editorEnlarge', arguments);
+            chr.add(modname + '.editorEnlarge', arguments);
         };
         temp.init = temp.init || function () {
-            chr.addConstraint(modname + '.init', arguments);
+            chr.add(modname + '.init', arguments);
         };
-        let res = {};
         for (let i in temp) {
             let f = temp[i];
             mod[i] = mod[i] || f;
@@ -1701,13 +1613,8 @@
                 chr.resolveOne(fres);
             };
         }
-        playground(chr, mod, res, modbase, modname);
-        return {
-            base: modbase,
-            module: mod,
-            resolve: res,
-            modname: modname
-        };
+        playground(chr, mod, res, base, modname);
+        return base;
     };
     let Playground = {};
     Playground.VERSION = version;

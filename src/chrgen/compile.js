@@ -17,28 +17,36 @@
     let escodegen = require('escodegen');
     let esprima = require('esprima');
 
+
+    const Settings = {
+      IGNORE_UNDERSCORE: true,
+      IGNORE_UNDERSCORE_START: true,
+    };
+
+
     let countCons = function(args) {
         let acc = {};
-        args.forEach(function(arg) { 
+        args.forEach(function(arg) {
             let n;
             if (arg.type == 'CallExpression')
                 n = arg.callee.name;
             else if (arg.type == 'Identifier')
                 n = arg.name;
-            n in acc ? acc[n]++ : acc[n] = 1; 
+            n in acc ? acc[n]++ : acc[n] = 1;
         });
         return acc;
     }
 
     let getCons = function(cons) {
         let acc = {};
-        let arr = []; 
+        let arr = [];
         let counted = countCons(cons);
         let vars = {}
-        cons.forEach(function(con,idx) { 
+        cons.forEach(function(con,idx) {
             let name;
             let args;
             let arity;
+            let external = con.external === true ? true : false;
             if (con.type == 'CallExpression') {
                 name = con.callee.name;
                 args = con.arguments;
@@ -54,15 +62,15 @@
                 name in acc ? acc[name]++ : acc[name] = 1;
                 i = acc[name];
             }
-            let iname = name + i;
-            if (con.type == 'CallExpression') 
+            let iname = external ? name.replace(/\./g, "_") + i : name + i;
+            if (con.type == 'CallExpression')
                 con.callee.iname = iname;
             if (con.type == 'Identifier')
                 con.iname = iname;
-            let nameArity = name + '/' + arity; 
+            let nameArity = name + '/' + arity;
             let loc = con.loc;
             args = args.map(procConArg);
-            arr.push({ name:name, iname:iname, arity:arity, nameArity:nameArity, index:idx, args:args, constraint:true, loc:loc });
+            arr.push({ name:name, iname:iname, arity:arity, nameArity:nameArity, index:idx, args:args, constraint:true, loc:loc, external:external });
         });
         return arr;
     }
@@ -128,7 +136,7 @@
         let seen = {};
         params.forEach(function (p) {
                 let args = {}
-                args[p.iname] = p.args; 
+                args[p.iname] = p.args;
                 let r = {name:p.name, iname:[p.iname], arity:p.arity, nameArity:p.nameArity, count:1, args:p.args };
                 seen[p.name] = r;
                 acc.push(r);
@@ -168,7 +176,7 @@
                             nameArity = name + '/' + arity;
                             res.push({name:name, arity:arity, nameArity:nameArity, args:arg.arguments, constraint:constraint});
                             break;
-                        default: 
+                        default:
                             break;
                     }
                     break;
@@ -182,7 +190,7 @@
             let res = getPath(e.object);
             res.push(e.property.name);
             return res;
-        } 
+        }
         else {
             return [e.name];
         }
@@ -192,9 +200,9 @@
 
     let addConstraints = function(constrs,arr) {
         arr.forEach(function(con) {
-            let key = con.nameArity; 
-            if (con.constraint && !(key in constrs)) 
-                constrs[key] = con; 
+            let key = con.nameArity;
+            if (con.constraint && !con.external && !(key in constrs))
+                constrs[key] = con;
         });
     }
 
@@ -213,7 +221,7 @@
                     // return [v];
                 }
                 else {
-                    arg.vars.forEach(function(v) { 
+                    arg.vars.forEach(function(v) {
                         extend(v, { consname:con.name, consiname:con.iname, index:i, struct:true, lit:true, loc:con.loc });
                     });
                     arg.vars.forEach(function(v) { vars.push(v) });
@@ -234,40 +242,42 @@
                 CallExpression: function (node) {
                     let self = this;
                     let mas = Gen.getMemberArgs(node.callee);
-                    if (mas.length > 0 && (hvars.some(v => v.name === mas[0]) || (reserveds.indexOf(mas[0]) !== -1 || acc.some(v => v.name === mas[0]))/*  || (inames.indexOf(mas[0]) !== -1)*/)) {
-                        let v = { name:mas[0], loc:loc };
-                        if (v.loc == 'body') {
-                            // if (assignedTo) {
-                            //     v.assignedTo = true;
-                            //     v.node = args[i];
-                            // }
-                            // if (inUse)
-                                v.inUse = inUse;
+                    mas.forEach(ma => {
+                        if (hvars.some(v => v.name === ma) || (reserveds.indexOf(ma) !== -1 || acc.some(v => v.name === ma) /*  || (inames.indexOf(mas[0]) !== -1)*/)) {
+                            let v = { name:ma, loc:loc };
+                            if (v.loc == 'body') {
+                                // if (assignedTo) {
+                                //     v.assignedTo = true;
+                                //     v.node = args[i];
+                                // }
+                                // if (inUse)
+                                    v.inUse = inUse;
+                            }
+                            node.callee.varCall = true;
+                            v.node = node;
+                            v.index = i;
+                            acc.push(v);
                         }
-                        node.callee.varCall = true;
-                        v.node = node;
-                        v.index = i;
-                        acc.push(v);
-                    }
+                    });
                     if (mas.length > 1 && inames.indexOf(mas[0]) !== -1) {
                         rinames.push(mas[0]);
                     }
-                    if (mas.length > 1) {
-                        let n = node.callee.object; 
-                        while (n.callee) {
-                            if (n.type === 'CallExpression') {
-                                n.arguments.forEach(n => { self.visit(n); });
-                                // if (n.callee.computed)
-                                // self.visit(n.callee.property);
-                            }
-                            if (n.callee.type === 'MemberExpression') {
-                                if (n.callee.computed)
-                                    self.visit(n.callee.property);
-                            }
-                            
-                            n = n.callee.object;
-                        }
-                    }                        
+                    // if (mas.length > 1) {
+                    //     let n = node.callee.object;
+                    //     while (n.callee) {
+                    //         if (n.type === 'CallExpression') {
+                    //             n.arguments.forEach(n => { self.visit(n); });
+                    //             // if (n.callee.computed)
+                    //             // self.visit(n.callee.property);
+                    //         }
+                    //         if (n.callee.type === 'MemberExpression') {
+                    //             if (n.callee.computed)
+                    //                 self.visit(n.callee.property);
+                    //         }
+
+                    //         n = n.callee.object;
+                    //     }
+                    // }
                     node.arguments.forEach(function(n) {
                         self.visit(n);
                     })
@@ -329,7 +339,7 @@
                 BinaryExpression: function (node) {
                     let oldInUse;
                     if (loc == 'body') {
-                        oldInUse = inUse; 
+                        oldInUse = inUse;
                         inUse = true;
                     }
                     this.visit(node.left);
@@ -346,7 +356,7 @@
                     assignedTo = false;
                     let oldInUse;
                     if (loc == 'body') {
-                        oldInUse = inUse; 
+                        oldInUse = inUse;
                         inUse = true;
                     }
                     this.visit(node.right);
@@ -359,6 +369,11 @@
         });
         return acc;
     }
+
+    let removeUnderscoreVars = function(vs,iu=Settings.IGNORE_UNDERSCORE, ius=Settings.IGNORE_UNDERSCORE_START) {
+      return vs.filter(v => !(v.name.startsWith('_') && (ius || (iu && v.name.length === 1))));
+    };
+
 
 
     let procMemberExprGBArgs = function(node,orgNode,i,loc,inUse,acc,visitor,hvars,inames,rinames) {
@@ -374,7 +389,7 @@
                     v.inUse = inUse;
                 }
                 v.index = i;
-                acc.push(v);                        
+                acc.push(v);
             }
             else if (acc.some(v => v.name === n)) {
                 let v = { name:n, loc:loc };
@@ -383,7 +398,7 @@
                 }
                 v.node = orgNode;
                 v.index = i;
-                acc.push(v);                        
+                acc.push(v);
             }
             if (inames.some(i => i === n)) {
                 rinames.push(n);
@@ -401,8 +416,8 @@
         //             v.inUse = inUse;
         //     }
         //     v.index = i;
-        //     acc.push(v);                        
-        // }        
+        //     acc.push(v);
+        // }
     }
 
 
@@ -425,7 +440,7 @@
             let samename = function(n) { return arg.name == n.name; };
             if (hargs.some(samename))
                 acc.push(arg.name);
-            else 
+            else
                 nacc.push(arg.name);
         });
         return { head:acc, bodyOnly:nacc };
@@ -437,7 +452,7 @@
             let samename = function(n) { return arg.name == n.name; };
             if (gargs.some(samename)) {
                 acc.push(arg.name);
-            }   
+            }
         });
         return acc;
     }
@@ -482,11 +497,11 @@
         params.push({name:'chr',type:'Identifier'});
         params.push({name:'module',type:'Identifier'});
         params.push({name:'resolve',type:'Identifier'});
-        params.push({name:'modbase',type:'Identifier'});
+        params.push({name:'base',type:'Identifier'});
         params.push({name:'modname',type:'Identifier'});
-    } 
+    }
 
-    let reserved = ['modname','modbase','module','resolve','chr','undefined','Var'];
+    let reserved = ['modname','modbase','base','module','resolve','chr','CHR','Var','undefined','null','document'];
 
     let compile = function(node) {
         let useHeader = true;
@@ -512,6 +527,7 @@
                             let func = prop.value;
                             let funcname = key.name;
                             let locConstrs = {};
+                            let singleCons = [];
                             if (Checks.isFunctionExpression(func) && Checks.isBlockStatement(func.body)) {
                                 initFuncs.push(key);
 
@@ -520,7 +536,7 @@
                                 let fb = func.body;
                                 let bs = fb.body;
                                 let bodies = [];
-                                let vardecls = ['undefined','null'];
+                                let vardecls = [];
                                 // if (bs.length == 1) {
                                 //     let expr = bs[0];
                                 //     let scs = splitConstr(expr);
@@ -534,53 +550,68 @@
                                         expr.declarations.forEach(v => {
                                             if (v.id && v.id.type === 'Identifier') {
                                                 vardecls.push(v.id.name);
-                                            } 
+                                            }
                                         });
+                                        fixResolve(expr);
                                         bodies.push(expr);
                                     }
                                     else if (expr.expression.type === 'AssignmentExpression') {
                                         if (expr.expression.left && expr.expression.left.type === 'Identifier')
                                             vardecls.push(expr.expression.left.name);
+                                        fixResolve(expr);
                                         bodies.push(expr);
                                     }
                                     else if (expr.expression.type === 'Identifier') {
+                                        let n = expr.expression.name
                                         vardecls.push(expr.expression.name);
+                                        let c = { name:n, iname:n, arity:0, nameArity:n+'/0', index:0, args:[], constraint:true, loc:'body', external:false, noRS:true };
+                                        singleCons.push(c);
                                     }
                                     else {
             // let mn = modName(c);
             // let mna = modNameArity(c,'$');
+                                        fixResolve(expr);
                                         let scs = splitConstr(expr);
-                                        let scsns = scs.kept.concat(scs.removed).map(c => {
-                                            if (c.type === 'Identifier')
-                                                return ({name:c.name,arity:0})
-                                            else
-                                                return ({name:c.callee.name,arity:c.arguments.length})
-                                        });
-                                        vardecls = vardecls.concat(scsns.map(modName),scsns.map(c => modNameArity(c,'$'))); 
-                                        let rs = reserved.concat(vardecls); 
-                                        let body = procExpr(ms,funcname,scs,locConstrs,rs);
-                                        let bexpr = Gen.makeExprRawCall(Gen.makeFunc([], body),[]);
-                                        bodies.push(bexpr);
+                                        if (scs.body.length === 0 && scs.removed.length === 0) {
+                                            let cons = getCons(scs.kept);
+                                            singleCons = singleCons.concat(cons);
+                                        }
+                                        else {
+                                            let scsns = scs.kept.concat(scs.removed).map(c => {
+                                                if (c.type === 'Identifier')
+                                                    return ({name:c.name,arity:0})
+                                                else
+                                                    return ({name:c.callee.name,arity:c.arguments.length})
+                                            });
+                                            // vardecls = vardecls.concat(scsns.map(modName),scsns.map(c => modNameArity(c,'$')));
+                                            let rscsns = scsns.filter(c => c.external === true);
+                                            let rs = reserved.concat(vardecls,rscsns.map(modName),rscsns.map(c => modNameArity(c,'$')));
+                                            let rvd = reserved.concat(vardecls);
+                                            let body = procExpr(ms,funcname,scs,locConstrs,rs,rvd);
+                                            let bexpr = Gen.makeExprRawCall(Gen.makeFunc([], body),[]);
+                                            bodies.push(bexpr);
+                                        }
                                     }
                                 });
                                     // fb.body = bodies;
                                 // }
 
                                 let cons = [];
-                                let rs = reserved.concat(vardecls); 
+                                let rs = reserved.concat(vardecls);
 
-                                Object.keys(locConstrs)./*filter(k => rs.indexOf(k) === -1).*/forEach(k => { 
-                                    let c = locConstrs[k]; 
-                                    if (rs.indexOf(c.name) === -1) {
-                                        constrs[k] = c; 
-                                        cons.push(c); 
+                                Object.keys(locConstrs)./*filter(k => rs.indexOf(k) === -1).*/forEach(k => {
+                                    let c = locConstrs[k];
+                                    if (rs.indexOf(c.name) === -1 || c.noRS === true) {
+                                        constrs[k] = c;
+                                        cons.push(c);
                                     }
                                 });
 
                                 let mfix = modnameFix();
-                                let modns = makeModNames(cons.filter(c => rs.indexOf(c.name) === -1));
+                                let modns = makeModNames(cons.filter(c => rs.indexOf(c.name) === -1 || c.noRS === true));
+                                let modnsin = makeModNames(singleCons);
 
-                                bodies = [mfix].concat(modns,bodies);
+                                bodies = [mfix].concat(modns,modnsin,bodies);
 
                                 prop.value = Gen.makeFunc(func.params,bodies);
                             }
@@ -590,14 +621,15 @@
                         let init = Gen.makeInit(ms,initFuncs,constrs);
                         props.push(init);
                         let vars = propsToVars(props);
-                        let retObj = makeRetObject(ms,version)
-                        vars = [useStrict()].concat(vars,retObj);
+                        let retObj = makeRetObject(ms,version);
+                        let reqs = ['Constraint','Var','Index','Match','Utils'].map(Gen.makeRequire);
+                        vars = [].concat(useStrict(),reqs,vars,retObj);
 
                         retBody = vars;
 
                         // let func = Gen.makeRawCall(Gen.makeFunc([], retBody),[]);
                         let func = Gen.makeFunc([], retBody);
-                        
+
                         let vres;
                         if (useHeader) {
                             let ns = ms.slice(2);
@@ -640,7 +672,7 @@
         return arr;
     }
 
-    let propsToVars = arr => arr.map(a => 
+    let propsToVars = arr => arr.map(a =>
         Gen.makeVar(a.key.name,a.value));
 
     // let entries = function(obj) { return Object.keys(obj).map(function(k) { return { key:k,value:obj[k] }; }); }
@@ -710,7 +742,7 @@
 
 
     let classifyBodyGuardVars = function(hvars,varmap) {
-        hvars.forEach(function(v) { 
+        hvars.forEach(function(v) {
             let n = v.name;
             if (varmap.body[n] !== undefined) {
                 if (varmap.body[n].some(function(bv) { return bv.inUse; })) {
@@ -739,19 +771,19 @@
             let opf = opfTable[g.operator]
             if (!opf)
                 return;
-            let gvs = Object.keys(guardVars).filter(function (k) { 
+            let gvs = Object.keys(guardVars).filter(function (k) {
                 return guardVars[k].some(function(v) {
-                    return v.index === i; 
-                }); 
+                    return v.index === i;
+                });
             });
             if (gvs.length === 0)
                 return;
             let res = {vars:gvs, op:g.operator, opf:opf, guard:g };
-            if (g.left.type == 'Identifier') 
+            if (g.left.type == 'Identifier')
                 res.left = { name:g.left.name }
             else if (g.left.type == 'Literal' && (g.left.value === null || g.left.value.constructor == Number || g.left.value.constructor == String))
                 res.left = { value:g.left.value}
-            if (g.right.type == 'Identifier') 
+            if (g.right.type == 'Identifier')
                 res.right = { name:g.right.name }
             else if (g.right.type == 'Literal' && (g.right.value === null || g.right.value.constructor == Number || g.right.value.constructor == String))
                 res.right = { value:g.right.value}
@@ -803,14 +835,14 @@
 
     let capFirst = function(s) {
         return s.charAt(0).toUpperCase() + s.slice(1);
-    } 
+    }
 
-    let modName = function(c) { 
+    let modName = function(c) {
         return 'mod' + capFirst(c.name);
     }
 
-    let modNameArity = function(c,slash='') { 
-        return modName(c) + slash + c.arity; 
+    let modNameArity = function(c,slash='') {
+        return modName(c) + slash + c.arity;
     }
 
     let makeModNames = function(hcons) {
@@ -836,10 +868,10 @@
         var arr = [];
         uniqBy(hcons, function(c) { return c.name + '#' + c.arity; }).forEach(function(c) {
         // uniqBy(hcons, function(c) { return c.name; }).forEach(function(c) {
-            let filt = hcons.filter(cc =>  
+            let filt = hcons.filter(cc =>
                 c.name === cc.name && c.arity === cc.arity);
             let count = filt.length;
-            if (count === 1 && u.name === filt[0].name && u.arity === filt[0].arity) 
+            if (count === 1 && u.name === filt[0].name && u.arity === filt[0].arity)
                 return;
             // let n = c.name;
             // let arity = c.arity;
@@ -848,7 +880,7 @@
             // let mnsa = modNameArity(c,true);
             // arr.push(Gen.makeMinConstraints(mna, count)Gen.makeId(mn),Gen.makeBinaryExpr('+',Gen.makeId('modname'),Gen.makeLit(n))));
             // arr.push(Gen.makeVarAssignment(Gen.makeId(mna),Gen.makeBinaryExpr('+',Gen.makeId(mn),Gen.makeLit('/' + arity))));
-            arr.push({modNameArity:mna,count:count});
+            arr.push({modNameArity:mna,nameArity:c.nameArity,count:count,external:c.external});
         });
 
         // if (arr.length === 0)
@@ -858,11 +890,11 @@
     }
 
 
-    let modnameFix = function() { 
+    let modnameFix = function() {
         return Gen.makeVarAssign(
-            Gen.makeId('pointedname'), 
+            Gen.makeId('pointedname'),
             Gen.makeConditional(Gen.makeId('modname'),Gen.makeBinaryExpr('+',Gen.makeId('modname'),Gen.makeLit('.')),Gen.makeLit(''))
-            ); 
+            );
     }
 
     let removedKept = function(hcons) {
@@ -871,7 +903,7 @@
         return rem.concat(kept);
     }
 
-    let procExpr = function(base,funcname,acc,constrs,reserveds) {
+    let procExpr = function(base,funcname,acc,constrs,reserveds,resvardecls) {
         let body = [];
 
         // let headcons = acc.removed.concat(acc.kept);
@@ -885,6 +917,9 @@
         // var modns = makeModNames(hcons);
         // body = body.concat(modns);
 
+        // if (acc.removed.length === 0 && acc.body.length === 0)
+        //     return;
+
         let bcons = getBodyCons(acc.body);
         addConstraints(constrs,bcons)
 
@@ -897,18 +932,24 @@
         let ginames = [];
         let gvars = getGBArgs(acc.guard,'guard',hvars,reserveds,inames,ginames);
 
-        let namef = function(a) { return a.name; };
-        let ugvars = uniqBy(gvars, namef);
-
         let binames = [];
         let bvars = getGBArgs(acc.body,'body',hvars,reserveds,inames,binames);
+
+        hvars = removeUnderscoreVars(hvars);
+        gvars = removeUnderscoreVars(gvars);
+        bvars = removeUnderscoreVars(bvars);
+
+        let namef = function(a) { return a.name; };
+        let ugvars = uniqBy(gvars, namef);
         let ubvars = uniqBy(bvars, namef);
+
+
 
         let varmap = makeVarMap(hvars,gvars,bvars);
         // makeAliases(varmap);
 
         values(varmap.vars).forEach(function(arr) { arr[0].single = (arr.length == 1); });
- 
+
 
         // sanity check: do not allow orphan variables in guard, which are not in head
         let orphanVars = Object.keys(varmap.guard).filter(k => !varmap.head[k]);
@@ -938,15 +979,15 @@
             if (acc.guard.length) {
                 contAll = Gen.makeContGuard(gparams,contBody);
             }
-            else 
+            else
                 contAll = contBody;
 
             let vparams = hcons.map(function(p) { return p.iname });
 
             let contGuardBody = Gen.makeCont(vparams,contAll);
 
-            return contGuardBody;                
-        } 
+            return contGuardBody;
+        }
 
 
         if (acc.guard.length) {
@@ -988,8 +1029,9 @@
                 if (varmap.body[b.name].every(sv => sv.arrowParam))
                     b.allArrowParam = true;
             });
+            replaceConstraintCalls(acc.body,resvardecls);
             let bodyCode = Gen.makeBody(base,bodyOnlyVars,acc.body,reserveds,inames);
-            let bodyFunc = Gen.makeVar('body', Gen.makeFunc(bparams.map(Gen.makeId),bodyCode));
+            let bodyFunc = Gen.makeVar(Gen.bodyname, Gen.makeFunc(bparams.map(Gen.makeId),bodyCode));
             body.push(bodyFunc);
         }
 
@@ -1033,7 +1075,7 @@
 
         let fullName = modNameArity(con,'$'); // base.length > 2 ? base.slice(2).join('.') + '.' + con.nameArity: con.nameArity;
 
-        let o = {name:con.name,iname:con.iname,nameArity:con.nameArity,index:i,fullName:fullName,lits:[],varCode:[],con:con};
+        let o = {name:con.name,iname:con.iname,nameArity:con.nameArity,index:i,fullName:fullName,lits:[],varCode:[],con:con,external:con.external};
 
         con.args.filter(arg => arg.lit).forEach(arg => {
             let l;
@@ -1062,13 +1104,14 @@
         });
 
         let vs = con.args.filter(arg => !arg.lit);
+        vs = removeUnderscoreVars(vs);
         let cvs = vs.map(v => { v.consiname = con.iname; return v; });
         let gvs = cvs.reduce((acc,v) => {
             acc[v.name] ? acc[v.name].push(v) : (acc[v.name] = [v]);
             return acc;
         },{});
 
-        // if (i > 0) {     
+        // if (i > 0) {
             let idxs = [];
             let hasIdx = false;
             con.args.forEach(a => {
@@ -1148,7 +1191,7 @@
                             idxs.push(null);
                     }
                 }
-                else { 
+                else {
                     if (!a.struct) {
                         idxs.push({idxType:'eq',lit:true,struct:false,value:a.value });
                         hasIdx = true;
@@ -1164,7 +1207,7 @@
                 }
             });
 
-            if (hasIdx) 
+            if (hasIdx)
                 o.indexes = idxs;
         // }
 
@@ -1210,7 +1253,7 @@
         o.retCont = retCont;
 
         if (retCont === 'noCont' && con.loc === 'removed') {
-            retCont = 'letCont';            
+            retCont = 'letCont';
         }
         else if (retCont === 'letCont') {
             retCont = 'cont';
@@ -1224,10 +1267,10 @@
 
     var isNotWaitVar = function(k,varmap) {
         let vs = varmap.head[k];
-        return !vs[0].inUse; 
+        return !vs[0].inUse;
     }
 
-    let rearrange = function(cs) { 
+    let rearrange = function(cs) {
         return cs;
     }
 
@@ -1314,6 +1357,55 @@
         });
     }
 
+    let replaceConstraintCalls = function(ast,resvardecls,arg=false) {
+        // arg = arg !== undefined ? arg : false;
+        if (Array.isArray(ast)) {
+            ast.forEach(function(a) { replaceConstraintCalls(a,resvardecls,arg); });
+            return;
+        }
+        esrecurse.visit(ast, {
+            CallExpression: function (node) {
+                if (arg === false) {
+                    node.arguments.forEach(n => {
+                        replaceConstraintCalls(n,resvardecls,true);
+                    });
+                }
+                else {
+                    if (node.callee.type === 'Identifier' && !inlist(node.callee.name,resvardecls)) {
+                        let n = node.callee; 
+                        node.callee = Gen.makeMemberExpr(Gen.makeId('Constraint'),Gen.makeId('makeConstraint'));
+                        let args = node.arguments.slice();
+                        node.arguments = [Gen.makeId(modName(n)),Gen.makeArray(args)];
+                    }
+                }          
+
+            }
+        });
+    }
+
+    let fixResolve = function(ast,resvardecls,arg=false) {
+        // arg = arg !== undefined ? arg : false;
+        if (Array.isArray(ast)) {
+            ast.forEach(function(a) { fixResolve(a,resvardecls,arg); });
+            return;
+        }
+        esrecurse.visit(ast, {
+            CallExpression: function (node) {
+                if (node.callee.type === 'MemberExpression') {
+                    let mas = Gen.getMemberArgs(node.callee);
+                    if (mas.length > 2 && (mas[0] === 'resolve' || mas[0] === 'module')) {
+                        mas.unshift('base');
+                        node.callee = Gen.makeMember(mas);
+                        return;
+                    }
+                }
+                return;
+            }
+        });
+    }
+
+
+
 
     let splitConstr = function(ast,acc) {
         let mode = 'kept';
@@ -1324,17 +1416,34 @@
                 if (mode === 'body' && node.callee.type === 'Identifier') {
                     node.callee.modname = modName(node.callee);
                 }
+                else if ((mode === 'kept' || mode === 'removed') && node.callee.type === 'MemberExpression') {
+                    let mas = Gen.getMemberArgs(node);
+                    let name = mas.join('.');
+                    node.callee = Gen.makeId(name);
+                    node.callee.modname = modName(node.callee);
+                    node.external = true;
+                }
                 acc[mode].push(node);
             },
             UnaryExpression: function (node) {
                 if (mode == 'kept' || mode == 'removed') {
+                    let na = node.argument;
                     if (node.operator == '-') {
-                        node.argument.loc = 'removed';
-                        acc['removed'].push(node.argument);
+                        na.loc = 'removed';
+                        let oldMode = mode;
+                        mode = 'removed';
+                        this.visit(na,acc);
+                        mode = oldMode;
                     }
                     else if (node.operator == '+') {
-                        node.argument.loc = 'kept';
-                        acc['kept'].push(node.argument);
+                        na.loc = 'kept';
+                        let oldMode = mode;
+                        mode = 'kept';
+                        this.visit(na,acc);
+                        mode = oldMode;
+                        // node.argument.loc = 'kept';
+                        // // this.visit(node.argument);
+                        // acc['kept'].push(node.argument);
                     }
                 }
             },
@@ -1352,7 +1461,7 @@
                     this.visit(n.left);
                     let nr = n.right;
                     n.operator = n.left = n.right = undefined;
-                    copy(nr, n);                    
+                    copy(nr, n);
                 }
                 n = node.right;
                 let bn;
@@ -1362,7 +1471,7 @@
                     bn = n.right;
                     let nl = n.left;
                     n.operator = n.left = n.right = undefined;
-                    copy(nl, n);                    
+                    copy(nl, n);
                 }
                 acc['guard'].push(node);
                 mode = 'body';
@@ -1381,7 +1490,7 @@
                         bn = n.right;
                         let nl = n.left;
                         n.operator = n.left = n.right = undefined;
-                        copy(nl, n);                    
+                        copy(nl, n);
                         acc['guard'].push(node.right);
                         mode = 'body';
                         this.visit(bn);
@@ -1427,6 +1536,28 @@
                     self.visit(n);
                 });
             },
+            MemberExpression: function (node) {
+                if (mode === 'body') {
+                    let n = Gen.makeCall('dummy',[]);
+                    n.loc = mode;
+                    n.callee = node;
+                    let mas = Gen.getMemberArgs(node);
+                    if (mas.length > 2 && (mas[0] === 'resolve' || mas[0] === 'module')) {
+                        mas.unshift('base');
+                        n.callee = Gen.makeMember(mas);
+                    }
+                    acc[mode].push(n);
+                }
+                else if (mode === 'kept' || mode === 'removed') {
+                    let mas = Gen.getMemberArgs(node);
+                    let name = mas.join('.');
+                    let n = Gen.makeCall(name,[]);
+                    n.loc = mode;
+                    n.callee.modname = modName({name:name});
+                    n.external = true;
+                    acc[mode].push(n);
+                }
+            },
             ArrayExpression: function (node) {
                 let self = this;
                 node.elements.forEach(function(n) {
@@ -1452,17 +1583,19 @@
 
     // convenience function
 
-
+    let inlist = function(c,cs) { return cs.indexOf(c) !== -1; };
 
 
     let astToString = function(ast) {
         return escodegen.generate(ast);
     }
 
+    let initialcomment = '// This file is generated: DO NOT CHANGE!\n// Changes will be overwritten...\n\n';
+
     let parseCompileGenerate = function(js) {
         let syntax = esprima.parse(js, { comment: true });
         syntax.body.forEach(compile);
-        return escodegen.generate(syntax);
+        return initialcomment + escodegen.generate(syntax, { comment: true });
     }
 
 
@@ -1477,4 +1610,3 @@
 
     return Compiler;
 }));
-

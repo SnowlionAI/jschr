@@ -93,28 +93,36 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     let escodegen = require('escodegen');
     let esprima = require('esprima');
 
+
+    const Settings = {
+      IGNORE_UNDERSCORE: true,
+      IGNORE_UNDERSCORE_START: true,
+    };
+
+
     let countCons = function(args) {
         let acc = {};
-        args.forEach(function(arg) { 
+        args.forEach(function(arg) {
             let n;
             if (arg.type == 'CallExpression')
                 n = arg.callee.name;
             else if (arg.type == 'Identifier')
                 n = arg.name;
-            n in acc ? acc[n]++ : acc[n] = 1; 
+            n in acc ? acc[n]++ : acc[n] = 1;
         });
         return acc;
     }
 
     let getCons = function(cons) {
         let acc = {};
-        let arr = []; 
+        let arr = [];
         let counted = countCons(cons);
         let vars = {}
-        cons.forEach(function(con,idx) { 
+        cons.forEach(function(con,idx) {
             let name;
             let args;
             let arity;
+            let external = con.external === true ? true : false;
             if (con.type == 'CallExpression') {
                 name = con.callee.name;
                 args = con.arguments;
@@ -130,15 +138,15 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 name in acc ? acc[name]++ : acc[name] = 1;
                 i = acc[name];
             }
-            let iname = name + i;
-            if (con.type == 'CallExpression') 
+            let iname = external ? name.replace(/\./g, "_") + i : name + i;
+            if (con.type == 'CallExpression')
                 con.callee.iname = iname;
             if (con.type == 'Identifier')
                 con.iname = iname;
-            let nameArity = name + '/' + arity; 
+            let nameArity = name + '/' + arity;
             let loc = con.loc;
             args = args.map(procConArg);
-            arr.push({ name:name, iname:iname, arity:arity, nameArity:nameArity, index:idx, args:args, constraint:true, loc:loc });
+            arr.push({ name:name, iname:iname, arity:arity, nameArity:nameArity, index:idx, args:args, constraint:true, loc:loc, external:external });
         });
         return arr;
     }
@@ -204,7 +212,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         let seen = {};
         params.forEach(function (p) {
                 let args = {}
-                args[p.iname] = p.args; 
+                args[p.iname] = p.args;
                 let r = {name:p.name, iname:[p.iname], arity:p.arity, nameArity:p.nameArity, count:1, args:p.args };
                 seen[p.name] = r;
                 acc.push(r);
@@ -244,7 +252,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                             nameArity = name + '/' + arity;
                             res.push({name:name, arity:arity, nameArity:nameArity, args:arg.arguments, constraint:constraint});
                             break;
-                        default: 
+                        default:
                             break;
                     }
                     break;
@@ -258,7 +266,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             let res = getPath(e.object);
             res.push(e.property.name);
             return res;
-        } 
+        }
         else {
             return [e.name];
         }
@@ -268,9 +276,9 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
     let addConstraints = function(constrs,arr) {
         arr.forEach(function(con) {
-            let key = con.nameArity; 
-            if (con.constraint && !(key in constrs)) 
-                constrs[key] = con; 
+            let key = con.nameArity;
+            if (con.constraint && !con.external && !(key in constrs))
+                constrs[key] = con;
         });
     }
 
@@ -289,7 +297,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                     // return [v];
                 }
                 else {
-                    arg.vars.forEach(function(v) { 
+                    arg.vars.forEach(function(v) {
                         extend(v, { consname:con.name, consiname:con.iname, index:i, struct:true, lit:true, loc:con.loc });
                     });
                     arg.vars.forEach(function(v) { vars.push(v) });
@@ -310,40 +318,42 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 CallExpression: function (node) {
                     let self = this;
                     let mas = Gen.getMemberArgs(node.callee);
-                    if (mas.length > 0 && (hvars.some(v => v.name === mas[0]) || (reserveds.indexOf(mas[0]) !== -1 || acc.some(v => v.name === mas[0]))/*  || (inames.indexOf(mas[0]) !== -1)*/)) {
-                        let v = { name:mas[0], loc:loc };
-                        if (v.loc == 'body') {
-                            // if (assignedTo) {
-                            //     v.assignedTo = true;
-                            //     v.node = args[i];
-                            // }
-                            // if (inUse)
-                                v.inUse = inUse;
+                    mas.forEach(ma => {
+                        if (hvars.some(v => v.name === ma) || (reserveds.indexOf(ma) !== -1 || acc.some(v => v.name === ma) /*  || (inames.indexOf(mas[0]) !== -1)*/)) {
+                            let v = { name:ma, loc:loc };
+                            if (v.loc == 'body') {
+                                // if (assignedTo) {
+                                //     v.assignedTo = true;
+                                //     v.node = args[i];
+                                // }
+                                // if (inUse)
+                                    v.inUse = inUse;
+                            }
+                            node.callee.varCall = true;
+                            v.node = node;
+                            v.index = i;
+                            acc.push(v);
                         }
-                        node.callee.varCall = true;
-                        v.node = node;
-                        v.index = i;
-                        acc.push(v);
-                    }
+                    });
                     if (mas.length > 1 && inames.indexOf(mas[0]) !== -1) {
                         rinames.push(mas[0]);
                     }
-                    if (mas.length > 1) {
-                        let n = node.callee.object; 
-                        while (n.callee) {
-                            if (n.type === 'CallExpression') {
-                                n.arguments.forEach(n => { self.visit(n); });
-                                // if (n.callee.computed)
-                                // self.visit(n.callee.property);
-                            }
-                            if (n.callee.type === 'MemberExpression') {
-                                if (n.callee.computed)
-                                    self.visit(n.callee.property);
-                            }
-                            
-                            n = n.callee.object;
-                        }
-                    }                        
+                    // if (mas.length > 1) {
+                    //     let n = node.callee.object;
+                    //     while (n.callee) {
+                    //         if (n.type === 'CallExpression') {
+                    //             n.arguments.forEach(n => { self.visit(n); });
+                    //             // if (n.callee.computed)
+                    //             // self.visit(n.callee.property);
+                    //         }
+                    //         if (n.callee.type === 'MemberExpression') {
+                    //             if (n.callee.computed)
+                    //                 self.visit(n.callee.property);
+                    //         }
+
+                    //         n = n.callee.object;
+                    //     }
+                    // }
                     node.arguments.forEach(function(n) {
                         self.visit(n);
                     })
@@ -405,7 +415,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 BinaryExpression: function (node) {
                     let oldInUse;
                     if (loc == 'body') {
-                        oldInUse = inUse; 
+                        oldInUse = inUse;
                         inUse = true;
                     }
                     this.visit(node.left);
@@ -422,7 +432,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                     assignedTo = false;
                     let oldInUse;
                     if (loc == 'body') {
-                        oldInUse = inUse; 
+                        oldInUse = inUse;
                         inUse = true;
                     }
                     this.visit(node.right);
@@ -435,6 +445,11 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         });
         return acc;
     }
+
+    let removeUnderscoreVars = function(vs,iu=Settings.IGNORE_UNDERSCORE, ius=Settings.IGNORE_UNDERSCORE_START) {
+      return vs.filter(v => !(v.name.startsWith('_') && (ius || (iu && v.name.length === 1))));
+    };
+
 
 
     let procMemberExprGBArgs = function(node,orgNode,i,loc,inUse,acc,visitor,hvars,inames,rinames) {
@@ -450,7 +465,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                     v.inUse = inUse;
                 }
                 v.index = i;
-                acc.push(v);                        
+                acc.push(v);
             }
             else if (acc.some(v => v.name === n)) {
                 let v = { name:n, loc:loc };
@@ -459,7 +474,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 }
                 v.node = orgNode;
                 v.index = i;
-                acc.push(v);                        
+                acc.push(v);
             }
             if (inames.some(i => i === n)) {
                 rinames.push(n);
@@ -477,8 +492,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         //             v.inUse = inUse;
         //     }
         //     v.index = i;
-        //     acc.push(v);                        
-        // }        
+        //     acc.push(v);
+        // }
     }
 
 
@@ -501,7 +516,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             let samename = function(n) { return arg.name == n.name; };
             if (hargs.some(samename))
                 acc.push(arg.name);
-            else 
+            else
                 nacc.push(arg.name);
         });
         return { head:acc, bodyOnly:nacc };
@@ -513,7 +528,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             let samename = function(n) { return arg.name == n.name; };
             if (gargs.some(samename)) {
                 acc.push(arg.name);
-            }   
+            }
         });
         return acc;
     }
@@ -558,11 +573,11 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         params.push({name:'chr',type:'Identifier'});
         params.push({name:'module',type:'Identifier'});
         params.push({name:'resolve',type:'Identifier'});
-        params.push({name:'modbase',type:'Identifier'});
+        params.push({name:'base',type:'Identifier'});
         params.push({name:'modname',type:'Identifier'});
-    } 
+    }
 
-    let reserved = ['modname','modbase','module','resolve','chr','undefined','Var'];
+    let reserved = ['modname','modbase','base','module','resolve','chr','CHR','Var','undefined','null','document'];
 
     let compile = function(node) {
         let useHeader = true;
@@ -588,6 +603,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                             let func = prop.value;
                             let funcname = key.name;
                             let locConstrs = {};
+                            let singleCons = [];
                             if (Checks.isFunctionExpression(func) && Checks.isBlockStatement(func.body)) {
                                 initFuncs.push(key);
 
@@ -596,7 +612,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                                 let fb = func.body;
                                 let bs = fb.body;
                                 let bodies = [];
-                                let vardecls = ['undefined','null'];
+                                let vardecls = [];
                                 // if (bs.length == 1) {
                                 //     let expr = bs[0];
                                 //     let scs = splitConstr(expr);
@@ -610,53 +626,68 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                                         expr.declarations.forEach(v => {
                                             if (v.id && v.id.type === 'Identifier') {
                                                 vardecls.push(v.id.name);
-                                            } 
+                                            }
                                         });
+                                        fixResolve(expr);
                                         bodies.push(expr);
                                     }
                                     else if (expr.expression.type === 'AssignmentExpression') {
                                         if (expr.expression.left && expr.expression.left.type === 'Identifier')
                                             vardecls.push(expr.expression.left.name);
+                                        fixResolve(expr);
                                         bodies.push(expr);
                                     }
                                     else if (expr.expression.type === 'Identifier') {
+                                        let n = expr.expression.name
                                         vardecls.push(expr.expression.name);
+                                        let c = { name:n, iname:n, arity:0, nameArity:n+'/0', index:0, args:[], constraint:true, loc:'body', external:false, noRS:true };
+                                        singleCons.push(c);
                                     }
                                     else {
             // let mn = modName(c);
             // let mna = modNameArity(c,'$');
+                                        fixResolve(expr);
                                         let scs = splitConstr(expr);
-                                        let scsns = scs.kept.concat(scs.removed).map(c => {
-                                            if (c.type === 'Identifier')
-                                                return ({name:c.name,arity:0})
-                                            else
-                                                return ({name:c.callee.name,arity:c.arguments.length})
-                                        });
-                                        vardecls = vardecls.concat(scsns.map(modName),scsns.map(c => modNameArity(c,'$'))); 
-                                        let rs = reserved.concat(vardecls); 
-                                        let body = procExpr(ms,funcname,scs,locConstrs,rs);
-                                        let bexpr = Gen.makeExprRawCall(Gen.makeFunc([], body),[]);
-                                        bodies.push(bexpr);
+                                        if (scs.body.length === 0 && scs.removed.length === 0) {
+                                            let cons = getCons(scs.kept);
+                                            singleCons = singleCons.concat(cons);
+                                        }
+                                        else {
+                                            let scsns = scs.kept.concat(scs.removed).map(c => {
+                                                if (c.type === 'Identifier')
+                                                    return ({name:c.name,arity:0})
+                                                else
+                                                    return ({name:c.callee.name,arity:c.arguments.length})
+                                            });
+                                            // vardecls = vardecls.concat(scsns.map(modName),scsns.map(c => modNameArity(c,'$')));
+                                            let rscsns = scsns.filter(c => c.external === true);
+                                            let rs = reserved.concat(vardecls,rscsns.map(modName),rscsns.map(c => modNameArity(c,'$')));
+                                            let rvd = reserved.concat(vardecls);
+                                            let body = procExpr(ms,funcname,scs,locConstrs,rs,rvd);
+                                            let bexpr = Gen.makeExprRawCall(Gen.makeFunc([], body),[]);
+                                            bodies.push(bexpr);
+                                        }
                                     }
                                 });
                                     // fb.body = bodies;
                                 // }
 
                                 let cons = [];
-                                let rs = reserved.concat(vardecls); 
+                                let rs = reserved.concat(vardecls);
 
-                                Object.keys(locConstrs)./*filter(k => rs.indexOf(k) === -1).*/forEach(k => { 
-                                    let c = locConstrs[k]; 
-                                    if (rs.indexOf(c.name) === -1) {
-                                        constrs[k] = c; 
-                                        cons.push(c); 
+                                Object.keys(locConstrs)./*filter(k => rs.indexOf(k) === -1).*/forEach(k => {
+                                    let c = locConstrs[k];
+                                    if (rs.indexOf(c.name) === -1 || c.noRS === true) {
+                                        constrs[k] = c;
+                                        cons.push(c);
                                     }
                                 });
 
                                 let mfix = modnameFix();
-                                let modns = makeModNames(cons.filter(c => rs.indexOf(c.name) === -1));
+                                let modns = makeModNames(cons.filter(c => rs.indexOf(c.name) === -1 || c.noRS === true));
+                                let modnsin = makeModNames(singleCons);
 
-                                bodies = [mfix].concat(modns,bodies);
+                                bodies = [mfix].concat(modns,modnsin,bodies);
 
                                 prop.value = Gen.makeFunc(func.params,bodies);
                             }
@@ -666,14 +697,15 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                         let init = Gen.makeInit(ms,initFuncs,constrs);
                         props.push(init);
                         let vars = propsToVars(props);
-                        let retObj = makeRetObject(ms,version)
-                        vars = [useStrict()].concat(vars,retObj);
+                        let retObj = makeRetObject(ms,version);
+                        let reqs = ['Constraint','Var','Index','Match','Utils'].map(Gen.makeRequire);
+                        vars = [].concat(useStrict(),reqs,vars,retObj);
 
                         retBody = vars;
 
                         // let func = Gen.makeRawCall(Gen.makeFunc([], retBody),[]);
                         let func = Gen.makeFunc([], retBody);
-                        
+
                         let vres;
                         if (useHeader) {
                             let ns = ms.slice(2);
@@ -716,7 +748,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         return arr;
     }
 
-    let propsToVars = arr => arr.map(a => 
+    let propsToVars = arr => arr.map(a =>
         Gen.makeVar(a.key.name,a.value));
 
     // let entries = function(obj) { return Object.keys(obj).map(function(k) { return { key:k,value:obj[k] }; }); }
@@ -786,7 +818,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
 
     let classifyBodyGuardVars = function(hvars,varmap) {
-        hvars.forEach(function(v) { 
+        hvars.forEach(function(v) {
             let n = v.name;
             if (varmap.body[n] !== undefined) {
                 if (varmap.body[n].some(function(bv) { return bv.inUse; })) {
@@ -815,19 +847,19 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             let opf = opfTable[g.operator]
             if (!opf)
                 return;
-            let gvs = Object.keys(guardVars).filter(function (k) { 
+            let gvs = Object.keys(guardVars).filter(function (k) {
                 return guardVars[k].some(function(v) {
-                    return v.index === i; 
-                }); 
+                    return v.index === i;
+                });
             });
             if (gvs.length === 0)
                 return;
             let res = {vars:gvs, op:g.operator, opf:opf, guard:g };
-            if (g.left.type == 'Identifier') 
+            if (g.left.type == 'Identifier')
                 res.left = { name:g.left.name }
             else if (g.left.type == 'Literal' && (g.left.value === null || g.left.value.constructor == Number || g.left.value.constructor == String))
                 res.left = { value:g.left.value}
-            if (g.right.type == 'Identifier') 
+            if (g.right.type == 'Identifier')
                 res.right = { name:g.right.name }
             else if (g.right.type == 'Literal' && (g.right.value === null || g.right.value.constructor == Number || g.right.value.constructor == String))
                 res.right = { value:g.right.value}
@@ -879,14 +911,14 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
     let capFirst = function(s) {
         return s.charAt(0).toUpperCase() + s.slice(1);
-    } 
+    }
 
-    let modName = function(c) { 
+    let modName = function(c) {
         return 'mod' + capFirst(c.name);
     }
 
-    let modNameArity = function(c,slash='') { 
-        return modName(c) + slash + c.arity; 
+    let modNameArity = function(c,slash='') {
+        return modName(c) + slash + c.arity;
     }
 
     let makeModNames = function(hcons) {
@@ -912,10 +944,10 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         var arr = [];
         uniqBy(hcons, function(c) { return c.name + '#' + c.arity; }).forEach(function(c) {
         // uniqBy(hcons, function(c) { return c.name; }).forEach(function(c) {
-            let filt = hcons.filter(cc =>  
+            let filt = hcons.filter(cc =>
                 c.name === cc.name && c.arity === cc.arity);
             let count = filt.length;
-            if (count === 1 && u.name === filt[0].name && u.arity === filt[0].arity) 
+            if (count === 1 && u.name === filt[0].name && u.arity === filt[0].arity)
                 return;
             // let n = c.name;
             // let arity = c.arity;
@@ -924,7 +956,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             // let mnsa = modNameArity(c,true);
             // arr.push(Gen.makeMinConstraints(mna, count)Gen.makeId(mn),Gen.makeBinaryExpr('+',Gen.makeId('modname'),Gen.makeLit(n))));
             // arr.push(Gen.makeVarAssignment(Gen.makeId(mna),Gen.makeBinaryExpr('+',Gen.makeId(mn),Gen.makeLit('/' + arity))));
-            arr.push({modNameArity:mna,count:count});
+            arr.push({modNameArity:mna,nameArity:c.nameArity,count:count,external:c.external});
         });
 
         // if (arr.length === 0)
@@ -934,11 +966,11 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     }
 
 
-    let modnameFix = function() { 
+    let modnameFix = function() {
         return Gen.makeVarAssign(
-            Gen.makeId('pointedname'), 
+            Gen.makeId('pointedname'),
             Gen.makeConditional(Gen.makeId('modname'),Gen.makeBinaryExpr('+',Gen.makeId('modname'),Gen.makeLit('.')),Gen.makeLit(''))
-            ); 
+            );
     }
 
     let removedKept = function(hcons) {
@@ -947,7 +979,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         return rem.concat(kept);
     }
 
-    let procExpr = function(base,funcname,acc,constrs,reserveds) {
+    let procExpr = function(base,funcname,acc,constrs,reserveds,resvardecls) {
         let body = [];
 
         // let headcons = acc.removed.concat(acc.kept);
@@ -961,6 +993,9 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         // var modns = makeModNames(hcons);
         // body = body.concat(modns);
 
+        // if (acc.removed.length === 0 && acc.body.length === 0)
+        //     return;
+
         let bcons = getBodyCons(acc.body);
         addConstraints(constrs,bcons)
 
@@ -973,18 +1008,24 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         let ginames = [];
         let gvars = getGBArgs(acc.guard,'guard',hvars,reserveds,inames,ginames);
 
-        let namef = function(a) { return a.name; };
-        let ugvars = uniqBy(gvars, namef);
-
         let binames = [];
         let bvars = getGBArgs(acc.body,'body',hvars,reserveds,inames,binames);
+
+        hvars = removeUnderscoreVars(hvars);
+        gvars = removeUnderscoreVars(gvars);
+        bvars = removeUnderscoreVars(bvars);
+
+        let namef = function(a) { return a.name; };
+        let ugvars = uniqBy(gvars, namef);
         let ubvars = uniqBy(bvars, namef);
+
+
 
         let varmap = makeVarMap(hvars,gvars,bvars);
         // makeAliases(varmap);
 
         values(varmap.vars).forEach(function(arr) { arr[0].single = (arr.length == 1); });
- 
+
 
         // sanity check: do not allow orphan variables in guard, which are not in head
         let orphanVars = Object.keys(varmap.guard).filter(k => !varmap.head[k]);
@@ -1014,15 +1055,15 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             if (acc.guard.length) {
                 contAll = Gen.makeContGuard(gparams,contBody);
             }
-            else 
+            else
                 contAll = contBody;
 
             let vparams = hcons.map(function(p) { return p.iname });
 
             let contGuardBody = Gen.makeCont(vparams,contAll);
 
-            return contGuardBody;                
-        } 
+            return contGuardBody;
+        }
 
 
         if (acc.guard.length) {
@@ -1064,8 +1105,9 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 if (varmap.body[b.name].every(sv => sv.arrowParam))
                     b.allArrowParam = true;
             });
+            replaceConstraintCalls(acc.body,resvardecls);
             let bodyCode = Gen.makeBody(base,bodyOnlyVars,acc.body,reserveds,inames);
-            let bodyFunc = Gen.makeVar('body', Gen.makeFunc(bparams.map(Gen.makeId),bodyCode));
+            let bodyFunc = Gen.makeVar(Gen.bodyname, Gen.makeFunc(bparams.map(Gen.makeId),bodyCode));
             body.push(bodyFunc);
         }
 
@@ -1109,7 +1151,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
         let fullName = modNameArity(con,'$'); // base.length > 2 ? base.slice(2).join('.') + '.' + con.nameArity: con.nameArity;
 
-        let o = {name:con.name,iname:con.iname,nameArity:con.nameArity,index:i,fullName:fullName,lits:[],varCode:[],con:con};
+        let o = {name:con.name,iname:con.iname,nameArity:con.nameArity,index:i,fullName:fullName,lits:[],varCode:[],con:con,external:con.external};
 
         con.args.filter(arg => arg.lit).forEach(arg => {
             let l;
@@ -1138,13 +1180,14 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         });
 
         let vs = con.args.filter(arg => !arg.lit);
+        vs = removeUnderscoreVars(vs);
         let cvs = vs.map(v => { v.consiname = con.iname; return v; });
         let gvs = cvs.reduce((acc,v) => {
             acc[v.name] ? acc[v.name].push(v) : (acc[v.name] = [v]);
             return acc;
         },{});
 
-        // if (i > 0) {     
+        // if (i > 0) {
             let idxs = [];
             let hasIdx = false;
             con.args.forEach(a => {
@@ -1224,7 +1267,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                             idxs.push(null);
                     }
                 }
-                else { 
+                else {
                     if (!a.struct) {
                         idxs.push({idxType:'eq',lit:true,struct:false,value:a.value });
                         hasIdx = true;
@@ -1240,7 +1283,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 }
             });
 
-            if (hasIdx) 
+            if (hasIdx)
                 o.indexes = idxs;
         // }
 
@@ -1286,7 +1329,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         o.retCont = retCont;
 
         if (retCont === 'noCont' && con.loc === 'removed') {
-            retCont = 'letCont';            
+            retCont = 'letCont';
         }
         else if (retCont === 'letCont') {
             retCont = 'cont';
@@ -1300,10 +1343,10 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
     var isNotWaitVar = function(k,varmap) {
         let vs = varmap.head[k];
-        return !vs[0].inUse; 
+        return !vs[0].inUse;
     }
 
-    let rearrange = function(cs) { 
+    let rearrange = function(cs) {
         return cs;
     }
 
@@ -1390,6 +1433,55 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         });
     }
 
+    let replaceConstraintCalls = function(ast,resvardecls,arg=false) {
+        // arg = arg !== undefined ? arg : false;
+        if (Array.isArray(ast)) {
+            ast.forEach(function(a) { replaceConstraintCalls(a,resvardecls,arg); });
+            return;
+        }
+        esrecurse.visit(ast, {
+            CallExpression: function (node) {
+                if (arg === false) {
+                    node.arguments.forEach(n => {
+                        replaceConstraintCalls(n,resvardecls,true);
+                    });
+                }
+                else {
+                    if (node.callee.type === 'Identifier' && !inlist(node.callee.name,resvardecls)) {
+                        let n = node.callee; 
+                        node.callee = Gen.makeMemberExpr(Gen.makeId('Constraint'),Gen.makeId('makeConstraint'));
+                        let args = node.arguments.slice();
+                        node.arguments = [Gen.makeId(modName(n)),Gen.makeArray(args)];
+                    }
+                }          
+
+            }
+        });
+    }
+
+    let fixResolve = function(ast,resvardecls,arg=false) {
+        // arg = arg !== undefined ? arg : false;
+        if (Array.isArray(ast)) {
+            ast.forEach(function(a) { fixResolve(a,resvardecls,arg); });
+            return;
+        }
+        esrecurse.visit(ast, {
+            CallExpression: function (node) {
+                if (node.callee.type === 'MemberExpression') {
+                    let mas = Gen.getMemberArgs(node.callee);
+                    if (mas.length > 2 && (mas[0] === 'resolve' || mas[0] === 'module')) {
+                        mas.unshift('base');
+                        node.callee = Gen.makeMember(mas);
+                        return;
+                    }
+                }
+                return;
+            }
+        });
+    }
+
+
+
 
     let splitConstr = function(ast,acc) {
         let mode = 'kept';
@@ -1400,17 +1492,34 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 if (mode === 'body' && node.callee.type === 'Identifier') {
                     node.callee.modname = modName(node.callee);
                 }
+                else if ((mode === 'kept' || mode === 'removed') && node.callee.type === 'MemberExpression') {
+                    let mas = Gen.getMemberArgs(node);
+                    let name = mas.join('.');
+                    node.callee = Gen.makeId(name);
+                    node.callee.modname = modName(node.callee);
+                    node.external = true;
+                }
                 acc[mode].push(node);
             },
             UnaryExpression: function (node) {
                 if (mode == 'kept' || mode == 'removed') {
+                    let na = node.argument;
                     if (node.operator == '-') {
-                        node.argument.loc = 'removed';
-                        acc['removed'].push(node.argument);
+                        na.loc = 'removed';
+                        let oldMode = mode;
+                        mode = 'removed';
+                        this.visit(na,acc);
+                        mode = oldMode;
                     }
                     else if (node.operator == '+') {
-                        node.argument.loc = 'kept';
-                        acc['kept'].push(node.argument);
+                        na.loc = 'kept';
+                        let oldMode = mode;
+                        mode = 'kept';
+                        this.visit(na,acc);
+                        mode = oldMode;
+                        // node.argument.loc = 'kept';
+                        // // this.visit(node.argument);
+                        // acc['kept'].push(node.argument);
                     }
                 }
             },
@@ -1428,7 +1537,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                     this.visit(n.left);
                     let nr = n.right;
                     n.operator = n.left = n.right = undefined;
-                    copy(nr, n);                    
+                    copy(nr, n);
                 }
                 n = node.right;
                 let bn;
@@ -1438,7 +1547,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                     bn = n.right;
                     let nl = n.left;
                     n.operator = n.left = n.right = undefined;
-                    copy(nl, n);                    
+                    copy(nl, n);
                 }
                 acc['guard'].push(node);
                 mode = 'body';
@@ -1457,7 +1566,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                         bn = n.right;
                         let nl = n.left;
                         n.operator = n.left = n.right = undefined;
-                        copy(nl, n);                    
+                        copy(nl, n);
                         acc['guard'].push(node.right);
                         mode = 'body';
                         this.visit(bn);
@@ -1503,6 +1612,28 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                     self.visit(n);
                 });
             },
+            MemberExpression: function (node) {
+                if (mode === 'body') {
+                    let n = Gen.makeCall('dummy',[]);
+                    n.loc = mode;
+                    n.callee = node;
+                    let mas = Gen.getMemberArgs(node);
+                    if (mas.length > 2 && (mas[0] === 'resolve' || mas[0] === 'module')) {
+                        mas.unshift('base');
+                        n.callee = Gen.makeMember(mas);
+                    }
+                    acc[mode].push(n);
+                }
+                else if (mode === 'kept' || mode === 'removed') {
+                    let mas = Gen.getMemberArgs(node);
+                    let name = mas.join('.');
+                    let n = Gen.makeCall(name,[]);
+                    n.loc = mode;
+                    n.callee.modname = modName({name:name});
+                    n.external = true;
+                    acc[mode].push(n);
+                }
+            },
             ArrayExpression: function (node) {
                 let self = this;
                 node.elements.forEach(function(n) {
@@ -1528,17 +1659,19 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
     // convenience function
 
-
+    let inlist = function(c,cs) { return cs.indexOf(c) !== -1; };
 
 
     let astToString = function(ast) {
         return escodegen.generate(ast);
     }
 
+    let initialcomment = '// This file is generated: DO NOT CHANGE!\n// Changes will be overwritten...\n\n';
+
     let parseCompileGenerate = function(js) {
         let syntax = esprima.parse(js, { comment: true });
         syntax.body.forEach(compile);
-        return escodegen.generate(syntax);
+        return initialcomment + escodegen.generate(syntax, { comment: true });
     }
 
 
@@ -1553,7 +1686,6 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
     return Compiler;
 }));
-
 
 },{"./checks.js":"/checks.js","./generate.js":"/generate.js","escodegen":"escodegen","esprima":"esprima","esrecurse":"esrecurse"}],"/generate.js":[function(require,module,exports){
 (function(root, factory) {
@@ -1572,10 +1704,11 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
     let ES6 = true;
 
+    let bodyname = '_body';
+
     var getMemberArgs = function(e) {
         if (checks.isCallExpression(e)) {
             var res = getMemberArgs(e.callee);
-            // res.push(e.property.name);
             return res;
         } else if (checks.isMemberExpression(e)) {
             var res = getMemberArgs(e.object);
@@ -1586,7 +1719,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         }
     }
 
-    var makeMember = function(args) { 
+    var makeMember = function(args) {
         args = Array.isArray(args) ? args : [args];
         return makeRawMember(args.map(makeId));
     }
@@ -1614,13 +1747,18 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         }
         else {
             let comp = !!e.computed;
-            return {
+            return makeMemberExpr(makeCompMemExp(args),n,comp);
+        }
+    }
+
+
+    var makeMemberExpr = function(o,p,comp=false) {
+        return {
                 "type": "MemberExpression",
                 "computed": comp,
-                "object": makeCompMemExp(args),
-                "property": n
-            };
-        }
+                "object": o,
+                "property": p
+        };
     }
 
 
@@ -1646,22 +1784,22 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     //                 makeRet(makeMember(['rh', '__cont'])));
     // }
 
-    var matchAllArg = function(carg) {
-        var me = [{
-           name: makeId(carg.consiname)
-        }, {
-            name: makeId('args')
-        }, {
-            name: makeLit(carg.index),
-            computed: true
-        }];
-        return makeCompMemExp(me);
-    }
+    // var matchAllArg = function(carg) {
+    //     var me = [{
+    //        name: makeId(carg.consiname)
+    //     }, {
+    //         name: makeCompMemExp(['Constraint','args'])
+    //     }, {
+    //         name: makeLit(carg.index),
+    //         computed: true
+    //     }];
+    //     return makeCompMemExp(me);
+    // }
 
 
 
     var makeMatchLitAndWait = function(arg,lit,refs,params,body) {
-        let res = 
+        let res =
             makeExprRawCall(
                 makeRawMember(
                     [makeCall(['Match','match'],[matchAllArg({consiname:arg.iname,index:arg.index}),lit,makeId(refs)]),makeId('wait')]
@@ -1699,20 +1837,24 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 ),
                 [makeFunc([makeId(name)],body)]
             );
-        } 
+        }
         return [res];
     }
 
     var matchAllArg = function(carg) {
-        var me = [{
-            name: makeId(carg.consiname)
-        }, {
-            name: makeId('args')
-        }, {
-            name: makeLit(carg.index),
-            computed: true
-        }];
-        return makeCompMemExp(me);
+        return makeMemberExpr(
+                // makeMemberExpr(
+                //     makeId(carg.consiname),
+                //     makeMemberExpr(
+                //         makeId('Constraint'),
+                //         makeId('argsSym')
+                //     ),
+                //     true
+                // ),
+                makeId(carg.consiname),
+                makeId('_$' + carg.index)
+                /*, true*/
+        );
     }
 
 
@@ -1774,7 +1916,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             return cont;
 
         var args = vs.map(makeId);
-        var names = args; 
+        var names = args;
 
         let res;
         let restArgs = [makeId(curVarRes),makeFunc(names,cont)];
@@ -1838,14 +1980,14 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         //     return makeAssign(makeId(a), makeCall([a, 'valueOf'], []));
         // });
         // return bs.concat([ makeExpr(makeCall('body', bargs.map(makeId))) ]);
-        return [ makeExpr(makeCall('body', bargs.map(makeId))) ];
+        return [ makeExpr(makeCall(bodyname, bargs.map(makeId))) ];
     }
 
     var makeBody = function(base, bos, args,reserveds,inames) {
         var res = [];
         var vars;
         let bosf = bos.filter(b => (reserveds.indexOf(b.name) === -1 && inames.indexOf(b.name) === -1) && !b.allArrowParam);
-        if (bosf.length) 
+        if (bosf.length)
             vars = makeVars(bosf.map(function(bo) {
                 let n = bo.name;
                 let nv = makeNew('Var', []);
@@ -1867,20 +2009,23 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                             if (arg.callee.varCall !== true && reserveds.indexOf(arg.callee.name) === -1) {
                                 var args = [makeId(arg.callee.modname), makeArray(arg.arguments)];
 
-                                var expr = makeExprCall(['chr', 'add'], args);
+                                // var expr = makeExprCall(['chr', 'add'], args);
+                                var expr = makeExprCall(['module', arg.callee.name], arg.arguments);
                                 res.push(expr);
                             }
                             else {
                                 var mbase = getMemberArgs(arg.callee);
                                 var expr = makeExprCall(mbase, arg.arguments);
-                                res.push(expr);                               
+                                res.push(expr);
                             }
                             break;
                         case 'MemberExpression':
                             var mbase = getMemberArgs(arg.callee);
                             var m0 = mbase[0];
                             if ((m0 == 'CHR' || m0 == 'chr') && mbase[1] == 'Modules') {
-                                var expr = makeExprCall(['chr', 'add'], [makeLit(mbase.slice(2).join('.')), makeArray(arg.arguments)]);
+                                // var expr = makeExprCall(['chr', 'add'], [makeLit(mbase.slice(2).join('.')), makeArray(arg.arguments)]);
+                                mbase.unshift('module');
+                                var expr = makeExprCall(mbase, arg.arguments);
                                 res.push(expr);
                             }
                             else if (m0 === 'module' || m0 === 'Var') {
@@ -2001,8 +2146,9 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
         let mcode = fminConstr(code);
 
+        let fn = rule.external ? makeLit(rule.nameArity) : makeId(rule.fullName);
         var res = makeExprCall(['chr', 'addConstraintListener'], [
-            makeId(rule.fullName), 
+            fn,
             makeArray(ixs),
             makeFunc([makeId(rule.iname)], mcode)
         ]);
@@ -2019,11 +2165,16 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
         var code = [];
 
+        // var optsargs = [makeProp(makeLit('check'), makeMember(['Constraint','isAlive']))];
         var optsargs = [makeProp(makeLit('check'), makeMember(['Constraint','alive']))];
+        // var optsargs = [makeProp(makeLit('check'), 
+        //     makeMemberExpr(
+        //         makeId('Constraint')
+        //         ,'alive']))];
 
         if (rule.indexes) {
             var mi = rule.indexes.reduce(function(acc, idx, i) {
-                if (!idx || idx === VAR_ID)
+                if (!idx || idx === VAR_ID || idx.value === null)
                     return acc;
                 var call = null;
                 if (idx.lit && !idx.struct) {
@@ -2049,7 +2200,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 optsargs.push(makeProp(makeLit('index'), makeArray(mi)));
         }
 
-        if (rule.idxCode) 
+        if (rule.idxCode)
             code.push(rule.idxCode);
 
 
@@ -2059,13 +2210,20 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             code.push(exclVar);
             // makeObject(
             rule.exclCons.map(function(a) {
-                var m = makeMember([a, 'id']);
-                var me = makeCompMemExp([{
-                    name: makeId('excl')
-                }, {
-                    name: m,
-                    computed: true
-                }]);
+                var me = makeMemberExpr(
+                    makeId('excl'),
+                    makeMemberExpr(
+                        makeId(a),
+                        makeMemberExpr(makeId('Constraint'),makeId('idSym')),
+                        true),
+                    true);
+                // var m = makeMember([a, 'id']);
+                // var me = makeCompMemExp([{
+                //     name: makeId('excl')
+                // }, {
+                //     name: m,
+                //     computed: true
+                // }]);
                 code.push(makeAssign(me, makeId('true')));
             });
             exclCode = makeId('excl');
@@ -2102,7 +2260,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
             rulebody = makeDerefs(derefs,curVarRes,fcontGuardBody(cont));
         }
-        else 
+        else
             rulebody = makeRuleBody(rule.rest, derefs, fcontGuardBody);
 
 
@@ -2133,7 +2291,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             rulebody.push(makeRet(makeId('$cont')));
         }
 
-        var fargs = [makeId(rule.fullName), makeObject(optsargs)];
+        let fn = rule.external ? makeLit(rule.nameArity) : makeId(rule.fullName);
+        var fargs = [fn, makeObject(optsargs)];
 
         if (exclCode)
             fargs.push(exclCode);
@@ -2167,36 +2326,6 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     }
 
 
-    var makeInitMods = function() {
-        var res = [];
-        // res.push(makeAssign(makeId('modbase'),makeLogExpression("||", makeId('modbase'), makeObject([]))));
-        res.push(makeVar('mod'));
-        let mbmn = makeCompMemExp(['modbase',{computed:true,name:'modname'}]);
-        let chmd = makeMember(['chr','Modules']);
-        let chmdmn = makeCompMemExp(['chr','Modules',{computed:true,name:'modname'}]);
-        let mb = makeId('modbase');
-        res.push(makeIf(
-            // makeUnary('!',makeId('modbase')),
-            makeLogExpression("===", mb, makeId('undefined')),
-            // makeBlock([
-            //     // makeExpr(makeAssign(mbmn,makeLogExpression("||", mbmn, makeObject([])))),
-            //     // makeExpr(makeAssign(makeId('mod'),mbmn))
-            //     ]),
-            makeBlock([
-                // makeExpr(makeAssign(chmd,makeLogExpression("||", chmd, makeObject([])))),
-                // makeExpr(makeAssign(chmdmn,makeLogExpression("||", chmdmn, makeObject([])))),
-                makeAssign(chmd,makeLogExpression("||", chmd, makeObject([]))),
-                makeAssign(mb,chmd),
-                // makeAssign(chmdmn,makeLogExpression("||", chmdmn, makeObject([]))),
-                // makeAssign(makeId('mod'),chmdmn)
-                ])
-            ));
-        res.push(makeAssign(mbmn,makeLogExpression("||", mbmn, makeObject([]))));
-        res.push(makeAssign(makeId('mod'),mbmn));
-
-        return res;
-    }
-
 
     let uniq = function(a) { return uniqBy(a, function (k) { return k; }); }
 
@@ -2209,6 +2338,37 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     }
 
 
+    var makeInitMods = function() {
+        var res = [];
+        // res.push(makeAssign(makeId('modbase'),makeLogExpression("||", makeId('modbase'), makeObject([]))));
+        // res.push(makeVar('mod'));
+        let chmd = makeMember(['chr','Modules']);
+        let chmdmn = makeCompMemExp(['chr','Modules',{computed:true,name:'modname'}]);
+        let mb = makeId('base');
+        res.push(makeIf(
+            makeLogExpression("===", mb, makeId('undefined')),
+            makeBlock([
+                makeAssign(chmd,makeLogExpression("||", chmd, makeObject([]))),
+                makeAssign(mb,chmd),
+                ])
+            ));
+
+        let bm = makeMember(['base','module']);
+        res.push(makeAssign(bm,makeLogExpression("||", bm, makeObject([]))));
+        let br = makeMember(['base','resolve']);
+        res.push(makeAssign(br,makeLogExpression("||", br, makeObject([]))));
+
+        let bmmn = makeCompMemExp(['base','module',{computed:true,name:'modname'}]);
+        res.push(makeAssign(bmmn,makeLogExpression("||", bmmn, makeObject([]))));
+        res.push(makeVarAssign(makeId('mod'),bmmn));
+
+        let brmn = makeCompMemExp(['base','resolve',{computed:true,name:'modname'}]);
+        res.push(makeAssign(brmn,makeLogExpression("||", brmn, makeObject([]))));
+        res.push(makeVarAssign(makeId('res'),brmn));
+
+        return res;
+    }
+
     var makeInit = function(base, funcs, constrs, reserveds) {
         let initMods = makeInitMods();
         let initFuncs = funcs.map(f => makeInitFunc(f.name));
@@ -2217,25 +2377,24 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         let cs = getOwnProperties(constrs);
         let initContrs = uniq(cs.map(c => c.callee ? c.callee.name : c.name)).map(makeInitConstraint);
 
-        let res = makeVarAssign(makeId('res'),makeObject([]));
+        // let res = makeVarAssign(makeId('res'),makeObject([]));
         let modRes = makeForTempModRes();
-        // modRes.unshift(res);
 
-        let body = initMods.concat([temp],initContrs,[res,modRes],initFuncs);
+        let body = initMods.concat([temp],initContrs,[modRes],initFuncs);
 
-        let retObj = makeObject([ makeProp(makeId('base'), makeId('modbase')), makeProp(makeId('module'), makeId('mod')), makeProp(makeId('resolve'), makeId('res')), makeProp(makeId('modname'), makeId('modname')) ]);
-        body.push(makeRet(retObj));
+        // let retObj = makeObject([ makeProp(makeId('base'), makeId('modbase')), makeProp(makeId('module'), makeId('mod')), makeProp(makeId('resolve'), makeId('res')), makeProp(makeId('modname'), makeId('modname')) ]);
+        body.push(makeRet(makeId('base')));
 
         // let n = makeLit(base.slice(2).join('.'));
 
         let n = base.slice(2).join('.');
-        let defaults = [null,null,Gen.makeLit(n)]
+        let defaults = [null,Gen.makeLit(n),null]
 
-        let initFunc = makeFunc([makeId('chr'),makeId('modbase'),makeId('modname')], body,defaults);
+        let initFunc = makeFunc([makeId('chr'),makeId('modname'),makeId('base')], body,defaults);
         return makeProp(makeId('init'), initFunc);
     }
 
-    var makeInitFunc = f => makeExpr(makeRawCall(makeId(f), [makeId('chr'),makeId('mod'),makeId('res'),makeId('modbase'),makeId('modname')]));
+    var makeInitFunc = f => makeExpr(makeRawCall(makeId(f), [makeId('chr'),makeId('mod'),makeId('res'),makeId('base'),makeId('modname')]));
 
     var makeInitConstraint = function(name) {
         // var mbase = base.slice();
@@ -2247,7 +2406,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         return makeAssign(me,
             makeLogExpression('||', me,
                 makeFunc([], [
-                    makeExprCall(['chr', 'addConstraint'], [
+                    // makeExprCall(['chr', 'addConstraint'], [
+                    makeExprCall(['chr', 'add'], [
                             makeBinaryExpr('+', makeId('modname'),makeLit('.' + name)),
                             makeId('arguments')
                         ])
@@ -2270,7 +2430,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
         let resi = makeCompMemExp(['res',{computed:true,name:'i'}]);
         let fres = makeFunc([],fbody,[],false);
-        let rass = makeAssign(resi,fres); 
+        let rass = makeAssign(resi,fres);
 
         let body = [
             makeVar('f',makeCompMemExp(['temp',{computed:true,name:'i'}])),
@@ -2292,7 +2452,12 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         if (arr.length === 0)
             return body;
 
-        var logs = makeLogArgs(arr.map(a => makeCall(['chr','has'],[makeId(a.modNameArity),makeId(a.count)])));
+        var logs = makeLogArgs(
+            arr.map(a => {
+                let n = a.external ? makeLit(a.nameArity) : makeId(a.modNameArity);
+                return makeCall(['chr','has'],[n,makeId(a.count)]);
+            } )
+        );
         return [makeIf(logs, makeBlock(body))];
     }
 
@@ -2555,6 +2720,19 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 [makeThis,func]);
     }
 
+    let upper = function(s) {
+        return s.charAt(0).toUpperCase() + s.slice(1);
+    };
+
+   let lower = function(s) {
+        return s.charAt(0).toLowerCase() + s.slice(1);
+    };
+
+
+    let makeRequire = function(n) {
+        return makeVarAssign(makeId(upper(n)),makeCall('require',[makeLit('/' + lower(n) + '.js')]));
+    }
+
 
 
     /* export */
@@ -2588,8 +2766,10 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         makeRuleBody:makeRuleBody,
         makeHandleConstraint:makeHandleConstraint,
         makeMember:makeMember,
+        makeMemberExpr:makeMemberExpr,
         makeCompMemExp:makeCompMemExp,
         // makeMatch:makeMatch,
+        makeArray:makeArray,
         makeDerefs:makeDerefs,
         makeMinConstraints:makeMinConstraints,
         makeWaitVars:makeWaitVars,
@@ -2597,6 +2777,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         makeRet:makeRet,
         makeObject:makeObject,
         makeHeader:makeHeader,
+        makeRequire:makeRequire,
+        bodyname: bodyname,
         // makeMatchAllArgs:makeMatchAllArgs,
         VAR_ID: VAR_ID,
         VERSION: version

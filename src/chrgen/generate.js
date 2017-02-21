@@ -14,10 +14,11 @@
 
     let ES6 = true;
 
+    let bodyname = '_body';
+
     var getMemberArgs = function(e) {
         if (checks.isCallExpression(e)) {
             var res = getMemberArgs(e.callee);
-            // res.push(e.property.name);
             return res;
         } else if (checks.isMemberExpression(e)) {
             var res = getMemberArgs(e.object);
@@ -28,7 +29,7 @@
         }
     }
 
-    var makeMember = function(args) { 
+    var makeMember = function(args) {
         args = Array.isArray(args) ? args : [args];
         return makeRawMember(args.map(makeId));
     }
@@ -56,13 +57,18 @@
         }
         else {
             let comp = !!e.computed;
-            return {
+            return makeMemberExpr(makeCompMemExp(args),n,comp);
+        }
+    }
+
+
+    var makeMemberExpr = function(o,p,comp=false) {
+        return {
                 "type": "MemberExpression",
                 "computed": comp,
-                "object": makeCompMemExp(args),
-                "property": n
-            };
-        }
+                "object": o,
+                "property": p
+        };
     }
 
 
@@ -88,22 +94,22 @@
     //                 makeRet(makeMember(['rh', '__cont'])));
     // }
 
-    var matchAllArg = function(carg) {
-        var me = [{
-           name: makeId(carg.consiname)
-        }, {
-            name: makeId('args')
-        }, {
-            name: makeLit(carg.index),
-            computed: true
-        }];
-        return makeCompMemExp(me);
-    }
+    // var matchAllArg = function(carg) {
+    //     var me = [{
+    //        name: makeId(carg.consiname)
+    //     }, {
+    //         name: makeCompMemExp(['Constraint','args'])
+    //     }, {
+    //         name: makeLit(carg.index),
+    //         computed: true
+    //     }];
+    //     return makeCompMemExp(me);
+    // }
 
 
 
     var makeMatchLitAndWait = function(arg,lit,refs,params,body) {
-        let res = 
+        let res =
             makeExprRawCall(
                 makeRawMember(
                     [makeCall(['Match','match'],[matchAllArg({consiname:arg.iname,index:arg.index}),lit,makeId(refs)]),makeId('wait')]
@@ -141,20 +147,24 @@
                 ),
                 [makeFunc([makeId(name)],body)]
             );
-        } 
+        }
         return [res];
     }
 
     var matchAllArg = function(carg) {
-        var me = [{
-            name: makeId(carg.consiname)
-        }, {
-            name: makeId('args')
-        }, {
-            name: makeLit(carg.index),
-            computed: true
-        }];
-        return makeCompMemExp(me);
+        return makeMemberExpr(
+                // makeMemberExpr(
+                //     makeId(carg.consiname),
+                //     makeMemberExpr(
+                //         makeId('Constraint'),
+                //         makeId('argsSym')
+                //     ),
+                //     true
+                // ),
+                makeId(carg.consiname),
+                makeId('_$' + carg.index)
+                /*, true*/
+        );
     }
 
 
@@ -216,7 +226,7 @@
             return cont;
 
         var args = vs.map(makeId);
-        var names = args; 
+        var names = args;
 
         let res;
         let restArgs = [makeId(curVarRes),makeFunc(names,cont)];
@@ -280,14 +290,14 @@
         //     return makeAssign(makeId(a), makeCall([a, 'valueOf'], []));
         // });
         // return bs.concat([ makeExpr(makeCall('body', bargs.map(makeId))) ]);
-        return [ makeExpr(makeCall('body', bargs.map(makeId))) ];
+        return [ makeExpr(makeCall(bodyname, bargs.map(makeId))) ];
     }
 
     var makeBody = function(base, bos, args,reserveds,inames) {
         var res = [];
         var vars;
         let bosf = bos.filter(b => (reserveds.indexOf(b.name) === -1 && inames.indexOf(b.name) === -1) && !b.allArrowParam);
-        if (bosf.length) 
+        if (bosf.length)
             vars = makeVars(bosf.map(function(bo) {
                 let n = bo.name;
                 let nv = makeNew('Var', []);
@@ -309,20 +319,23 @@
                             if (arg.callee.varCall !== true && reserveds.indexOf(arg.callee.name) === -1) {
                                 var args = [makeId(arg.callee.modname), makeArray(arg.arguments)];
 
-                                var expr = makeExprCall(['chr', 'add'], args);
+                                // var expr = makeExprCall(['chr', 'add'], args);
+                                var expr = makeExprCall(['module', arg.callee.name], arg.arguments);
                                 res.push(expr);
                             }
                             else {
                                 var mbase = getMemberArgs(arg.callee);
                                 var expr = makeExprCall(mbase, arg.arguments);
-                                res.push(expr);                               
+                                res.push(expr);
                             }
                             break;
                         case 'MemberExpression':
                             var mbase = getMemberArgs(arg.callee);
                             var m0 = mbase[0];
                             if ((m0 == 'CHR' || m0 == 'chr') && mbase[1] == 'Modules') {
-                                var expr = makeExprCall(['chr', 'add'], [makeLit(mbase.slice(2).join('.')), makeArray(arg.arguments)]);
+                                // var expr = makeExprCall(['chr', 'add'], [makeLit(mbase.slice(2).join('.')), makeArray(arg.arguments)]);
+                                mbase.unshift('module');
+                                var expr = makeExprCall(mbase, arg.arguments);
                                 res.push(expr);
                             }
                             else if (m0 === 'module' || m0 === 'Var') {
@@ -443,8 +456,9 @@
 
         let mcode = fminConstr(code);
 
+        let fn = rule.external ? makeLit(rule.nameArity) : makeId(rule.fullName);
         var res = makeExprCall(['chr', 'addConstraintListener'], [
-            makeId(rule.fullName), 
+            fn,
             makeArray(ixs),
             makeFunc([makeId(rule.iname)], mcode)
         ]);
@@ -461,11 +475,16 @@
 
         var code = [];
 
+        // var optsargs = [makeProp(makeLit('check'), makeMember(['Constraint','isAlive']))];
         var optsargs = [makeProp(makeLit('check'), makeMember(['Constraint','alive']))];
+        // var optsargs = [makeProp(makeLit('check'), 
+        //     makeMemberExpr(
+        //         makeId('Constraint')
+        //         ,'alive']))];
 
         if (rule.indexes) {
             var mi = rule.indexes.reduce(function(acc, idx, i) {
-                if (!idx || idx === VAR_ID)
+                if (!idx || idx === VAR_ID || idx.value === null)
                     return acc;
                 var call = null;
                 if (idx.lit && !idx.struct) {
@@ -491,7 +510,7 @@
                 optsargs.push(makeProp(makeLit('index'), makeArray(mi)));
         }
 
-        if (rule.idxCode) 
+        if (rule.idxCode)
             code.push(rule.idxCode);
 
 
@@ -501,13 +520,20 @@
             code.push(exclVar);
             // makeObject(
             rule.exclCons.map(function(a) {
-                var m = makeMember([a, 'id']);
-                var me = makeCompMemExp([{
-                    name: makeId('excl')
-                }, {
-                    name: m,
-                    computed: true
-                }]);
+                var me = makeMemberExpr(
+                    makeId('excl'),
+                    makeMemberExpr(
+                        makeId(a),
+                        makeMemberExpr(makeId('Constraint'),makeId('idSym')),
+                        true),
+                    true);
+                // var m = makeMember([a, 'id']);
+                // var me = makeCompMemExp([{
+                //     name: makeId('excl')
+                // }, {
+                //     name: m,
+                //     computed: true
+                // }]);
                 code.push(makeAssign(me, makeId('true')));
             });
             exclCode = makeId('excl');
@@ -544,7 +570,7 @@
 
             rulebody = makeDerefs(derefs,curVarRes,fcontGuardBody(cont));
         }
-        else 
+        else
             rulebody = makeRuleBody(rule.rest, derefs, fcontGuardBody);
 
 
@@ -575,7 +601,8 @@
             rulebody.push(makeRet(makeId('$cont')));
         }
 
-        var fargs = [makeId(rule.fullName), makeObject(optsargs)];
+        let fn = rule.external ? makeLit(rule.nameArity) : makeId(rule.fullName);
+        var fargs = [fn, makeObject(optsargs)];
 
         if (exclCode)
             fargs.push(exclCode);
@@ -609,36 +636,6 @@
     }
 
 
-    var makeInitMods = function() {
-        var res = [];
-        // res.push(makeAssign(makeId('modbase'),makeLogExpression("||", makeId('modbase'), makeObject([]))));
-        res.push(makeVar('mod'));
-        let mbmn = makeCompMemExp(['modbase',{computed:true,name:'modname'}]);
-        let chmd = makeMember(['chr','Modules']);
-        let chmdmn = makeCompMemExp(['chr','Modules',{computed:true,name:'modname'}]);
-        let mb = makeId('modbase');
-        res.push(makeIf(
-            // makeUnary('!',makeId('modbase')),
-            makeLogExpression("===", mb, makeId('undefined')),
-            // makeBlock([
-            //     // makeExpr(makeAssign(mbmn,makeLogExpression("||", mbmn, makeObject([])))),
-            //     // makeExpr(makeAssign(makeId('mod'),mbmn))
-            //     ]),
-            makeBlock([
-                // makeExpr(makeAssign(chmd,makeLogExpression("||", chmd, makeObject([])))),
-                // makeExpr(makeAssign(chmdmn,makeLogExpression("||", chmdmn, makeObject([])))),
-                makeAssign(chmd,makeLogExpression("||", chmd, makeObject([]))),
-                makeAssign(mb,chmd),
-                // makeAssign(chmdmn,makeLogExpression("||", chmdmn, makeObject([]))),
-                // makeAssign(makeId('mod'),chmdmn)
-                ])
-            ));
-        res.push(makeAssign(mbmn,makeLogExpression("||", mbmn, makeObject([]))));
-        res.push(makeAssign(makeId('mod'),mbmn));
-
-        return res;
-    }
-
 
     let uniq = function(a) { return uniqBy(a, function (k) { return k; }); }
 
@@ -651,6 +648,37 @@
     }
 
 
+    var makeInitMods = function() {
+        var res = [];
+        // res.push(makeAssign(makeId('modbase'),makeLogExpression("||", makeId('modbase'), makeObject([]))));
+        // res.push(makeVar('mod'));
+        let chmd = makeMember(['chr','Modules']);
+        let chmdmn = makeCompMemExp(['chr','Modules',{computed:true,name:'modname'}]);
+        let mb = makeId('base');
+        res.push(makeIf(
+            makeLogExpression("===", mb, makeId('undefined')),
+            makeBlock([
+                makeAssign(chmd,makeLogExpression("||", chmd, makeObject([]))),
+                makeAssign(mb,chmd),
+                ])
+            ));
+
+        let bm = makeMember(['base','module']);
+        res.push(makeAssign(bm,makeLogExpression("||", bm, makeObject([]))));
+        let br = makeMember(['base','resolve']);
+        res.push(makeAssign(br,makeLogExpression("||", br, makeObject([]))));
+
+        let bmmn = makeCompMemExp(['base','module',{computed:true,name:'modname'}]);
+        res.push(makeAssign(bmmn,makeLogExpression("||", bmmn, makeObject([]))));
+        res.push(makeVarAssign(makeId('mod'),bmmn));
+
+        let brmn = makeCompMemExp(['base','resolve',{computed:true,name:'modname'}]);
+        res.push(makeAssign(brmn,makeLogExpression("||", brmn, makeObject([]))));
+        res.push(makeVarAssign(makeId('res'),brmn));
+
+        return res;
+    }
+
     var makeInit = function(base, funcs, constrs, reserveds) {
         let initMods = makeInitMods();
         let initFuncs = funcs.map(f => makeInitFunc(f.name));
@@ -659,25 +687,24 @@
         let cs = getOwnProperties(constrs);
         let initContrs = uniq(cs.map(c => c.callee ? c.callee.name : c.name)).map(makeInitConstraint);
 
-        let res = makeVarAssign(makeId('res'),makeObject([]));
+        // let res = makeVarAssign(makeId('res'),makeObject([]));
         let modRes = makeForTempModRes();
-        // modRes.unshift(res);
 
-        let body = initMods.concat([temp],initContrs,[res,modRes],initFuncs);
+        let body = initMods.concat([temp],initContrs,[modRes],initFuncs);
 
-        let retObj = makeObject([ makeProp(makeId('base'), makeId('modbase')), makeProp(makeId('module'), makeId('mod')), makeProp(makeId('resolve'), makeId('res')), makeProp(makeId('modname'), makeId('modname')) ]);
-        body.push(makeRet(retObj));
+        // let retObj = makeObject([ makeProp(makeId('base'), makeId('modbase')), makeProp(makeId('module'), makeId('mod')), makeProp(makeId('resolve'), makeId('res')), makeProp(makeId('modname'), makeId('modname')) ]);
+        body.push(makeRet(makeId('base')));
 
         // let n = makeLit(base.slice(2).join('.'));
 
         let n = base.slice(2).join('.');
-        let defaults = [null,null,Gen.makeLit(n)]
+        let defaults = [null,Gen.makeLit(n),null]
 
-        let initFunc = makeFunc([makeId('chr'),makeId('modbase'),makeId('modname')], body,defaults);
+        let initFunc = makeFunc([makeId('chr'),makeId('modname'),makeId('base')], body,defaults);
         return makeProp(makeId('init'), initFunc);
     }
 
-    var makeInitFunc = f => makeExpr(makeRawCall(makeId(f), [makeId('chr'),makeId('mod'),makeId('res'),makeId('modbase'),makeId('modname')]));
+    var makeInitFunc = f => makeExpr(makeRawCall(makeId(f), [makeId('chr'),makeId('mod'),makeId('res'),makeId('base'),makeId('modname')]));
 
     var makeInitConstraint = function(name) {
         // var mbase = base.slice();
@@ -689,7 +716,8 @@
         return makeAssign(me,
             makeLogExpression('||', me,
                 makeFunc([], [
-                    makeExprCall(['chr', 'addConstraint'], [
+                    // makeExprCall(['chr', 'addConstraint'], [
+                    makeExprCall(['chr', 'add'], [
                             makeBinaryExpr('+', makeId('modname'),makeLit('.' + name)),
                             makeId('arguments')
                         ])
@@ -712,7 +740,7 @@
 
         let resi = makeCompMemExp(['res',{computed:true,name:'i'}]);
         let fres = makeFunc([],fbody,[],false);
-        let rass = makeAssign(resi,fres); 
+        let rass = makeAssign(resi,fres);
 
         let body = [
             makeVar('f',makeCompMemExp(['temp',{computed:true,name:'i'}])),
@@ -734,7 +762,12 @@
         if (arr.length === 0)
             return body;
 
-        var logs = makeLogArgs(arr.map(a => makeCall(['chr','has'],[makeId(a.modNameArity),makeId(a.count)])));
+        var logs = makeLogArgs(
+            arr.map(a => {
+                let n = a.external ? makeLit(a.nameArity) : makeId(a.modNameArity);
+                return makeCall(['chr','has'],[n,makeId(a.count)]);
+            } )
+        );
         return [makeIf(logs, makeBlock(body))];
     }
 
@@ -997,6 +1030,19 @@
                 [makeThis,func]);
     }
 
+    let upper = function(s) {
+        return s.charAt(0).toUpperCase() + s.slice(1);
+    };
+
+   let lower = function(s) {
+        return s.charAt(0).toLowerCase() + s.slice(1);
+    };
+
+
+    let makeRequire = function(n) {
+        return makeVarAssign(makeId(upper(n)),makeCall('require',[makeLit('/' + lower(n) + '.js')]));
+    }
+
 
 
     /* export */
@@ -1030,8 +1076,10 @@
         makeRuleBody:makeRuleBody,
         makeHandleConstraint:makeHandleConstraint,
         makeMember:makeMember,
+        makeMemberExpr:makeMemberExpr,
         makeCompMemExp:makeCompMemExp,
         // makeMatch:makeMatch,
+        makeArray:makeArray,
         makeDerefs:makeDerefs,
         makeMinConstraints:makeMinConstraints,
         makeWaitVars:makeWaitVars,
@@ -1039,6 +1087,8 @@
         makeRet:makeRet,
         makeObject:makeObject,
         makeHeader:makeHeader,
+        makeRequire:makeRequire,
+        bodyname: bodyname,
         // makeMatchAllArgs:makeMatchAllArgs,
         VAR_ID: VAR_ID,
         VERSION: version

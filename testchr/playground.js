@@ -6,6 +6,8 @@ CHR.Modules.Playground = {
 
 	playground: function() {
 
+		// let Constraint = require('/constraint.js');
+		
 		- addScript(js) >>> (
 			toDataURI('text/javascript',js,du),
 			script = document.createElement('script'),

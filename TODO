@@ -1,0 +1,35 @@
+
+
+modular extensibility
+
+do not match underscore / underscored variables
+
+combine constraints:
+
+t(a,b), {
+  s1(a,c) >>> ....;
+  s2(a,c) >>> ....;
+}
+
+
+database: removing only by flagging and batch real remove;
+
+var constraints. E.g.:
+
+t(a,b), b(a,c) >>> ...
+
+arguments in arrays in body (should be passed in body arguments)
+
+functions as constraints in arguments (for higher order calls)
+
+ensure body argument in brackets: e.g. resolve[action](id)
+
+externalize let variables / functions
+
+check underscored variables in body (rename?)
+
+
+integrate constraints into regular objects, e.g. dom elements
+
+
+
